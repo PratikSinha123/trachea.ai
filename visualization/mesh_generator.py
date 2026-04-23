@@ -160,7 +160,8 @@ class MeshGenerator:
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
         # Build binary buffer
-        indices = faces.ravel().astype(np.uint32)
+        # Use uint16 (UNSIGNED_SHORT) for WebGL 1.0 compatibility
+        indices = faces.ravel().astype(np.uint16)
         vert_bytes = verts.tobytes()
         norm_bytes = normals.tobytes()
         idx_bytes = indices.tobytes()
@@ -201,7 +202,7 @@ class MeshGenerator:
             "accessors": [
                 {  # Indices
                     "bufferView": 0,
-                    "componentType": 5125,  # UNSIGNED_INT
+                    "componentType": 5123,  # UNSIGNED_SHORT
                     "count": len(indices),
                     "type": "SCALAR",
                     "max": [int(indices.max())] if len(indices) else [0],
