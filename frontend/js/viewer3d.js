@@ -249,10 +249,19 @@ export class Viewer3D {
 
     _centerCamera(mesh) {
         const box = new THREE.Box3().setFromObject(mesh);
+        if (box.isEmpty()) {
+            console.warn("Mesh bounding box is empty, skipping camera centering.");
+            return;
+        }
+
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
 
         const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim === 0 || isNaN(maxDim)) {
+            return;
+        }
+
         const fov = this.camera.fov * (Math.PI / 180);
         const dist = maxDim / (2 * Math.tan(fov / 2)) * 1.5;
 
