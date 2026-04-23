@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TracheaAI — Intelligent Trachea Analysis & 3D Visualization</title>
+    <meta name="description" content="AI-powered trachea segmentation, healthy reconstruction, and interactive 3D morphing visualization from CT scans.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loader-container">
+            <div class="dna-helix">
+                <div class="strand"></div>
+                <div class="strand"></div>
+                <div class="strand"></div>
+            </div>
+            <h1 class="loader-title">TracheaAI</h1>
+            <p class="loader-subtitle">Initializing 3D Visualization Engine</p>
+            <div class="loader-progress">
+                <div class="loader-bar" id="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app hidden">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <div class="logo">
+                    <div class="logo-icon">🫁</div>
+                    <div class="logo-text">
+                        <span class="logo-name">TracheaAI</span>
+                        <span class="logo-version">v1.0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="top-bar-center">
+                <div class="scan-selector">
+                    <select id="scan-select" class="scan-dropdown">
+                        <option value="">Select a scan...</option>
+                    </select>
+                    <button id="btn-process" class="btn btn-accent" title="Process new scan">
+                        <span class="btn-icon">⚡</span> Process
+                    </button>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <div class="device-badge" id="device-badge">
+                    <span class="badge-dot"></span>
+                    <span class="badge-text">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Left Panel — Controls -->
+            <aside class="panel panel-left" id="panel-left">
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">🎨</span> Visualization
+                    </h3>
+                    <div class="control-group">
+                        <label class="control-label">Display Mode</label>
+                        <div class="toggle-group" id="display-mode">
+                            <button class="toggle-btn active" data-mode="diseased">Diseased</button>
+                            <button class="toggle-btn" data-mode="healthy">Healthy</button>
+                            <button class="toggle-btn" data-mode="both">Both</button>
+                            <button class="toggle-btn" data-mode="morph">Morph</button>
+                        </div>
+                    </div>
+                    <div class="control-group" id="morph-controls" style="display:none">
+                        <label class="control-label">Morphing Timeline</label>
+                        <div class="morph-slider-container">
+                            <input type="range" id="morph-slider" class="morph-slider" min="0" max="20" value="0" step="1">
+                            <div class="morph-labels">
+                                <span class="morph-label-diseased">Diseased</span>
+                                <span class="morph-label-healthy">Healthy</span>
+                            </div>
+                        </div>
+                        <div class="morph-playback">
+                            <button id="btn-play-morph" class="btn btn-sm btn-ghost">▶ Play</button>
+                            <span id="morph-frame-label" class="morph-frame-label">0 / 20</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Opacity</label>
+                        <input type="range" id="opacity-slider" class="slider" min="0" max="100" value="85">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Wireframe</label>
+                        <label class="switch">
+                            <input type="checkbox" id="wireframe-toggle">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📐</span> Measurements
+                    </h3>
+                    <div id="stats-container" class="stats-container">
+                        <div class="stat-card">
+                            <span class="stat-label">Volume (Diseased)</span>
+                            <span class="stat-value" id="stat-vol-diseased">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Volume (Healthy)</span>
+                            <span class="stat-value" id="stat-vol-healthy">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Volume Change</span>
+                            <span class="stat-value" id="stat-vol-change">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Avg Diameter</span>
+                            <span class="stat-value" id="stat-avg-diam">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Min Diameter</span>
+                            <span class="stat-value" id="stat-min-diam">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Max Stenosis</span>
+                            <span class="stat-value" id="stat-stenosis">—</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Anomalies Found</span>
+                            <span class="stat-value" id="stat-anomalies">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">⚠️</span> Anomalies
+                    </h3>
+                    <div id="anomaly-list" class="anomaly-list">
+                        <p class="placeholder-text">Load a scan to view anomalies</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center — 3D Viewer -->
+            <section class="viewer-container" id="viewer-container">
+                <canvas id="viewer-canvas"></canvas>
+                <div class="viewer-overlay-top">
+                    <div class="viewer-info" id="viewer-info">
+                        <span>Drag to rotate · Scroll to zoom · Right-click to pan</span>
+                    </div>
+                </div>
+                <div class="viewer-overlay-bottom">
+                    <div class="axis-indicator" id="axis-indicator">
+                        <span class="axis-x">X</span>
+                        <span class="axis-y">Y</span>
+                        <span class="axis-z">Z</span>
+                    </div>
+                </div>
+                <!-- Empty state -->
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-icon">🫁</div>
+                    <h2>No Scan Loaded</h2>
+                    <p>Select a processed scan from the dropdown above, or process a new DICOM/NIfTI file.</p>
+                </div>
+            </section>
+
+            <!-- Right Panel — Slice Viewer -->
+            <aside class="panel panel-right" id="panel-right">
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">🔬</span> CT Slices
+                    </h3>
+                    <div class="slice-viewer-tabs">
+                        <button class="slice-tab active" data-axis="axial">Axial</button>
+                        <button class="slice-tab" data-axis="coronal">Coronal</button>
+                        <button class="slice-tab" data-axis="sagittal">Sagittal</button>
+                    </div>
+                    <div class="slice-display">
+                        <canvas id="slice-canvas" width="256" height="256"></canvas>
+                    </div>
+                    <div class="slice-controls">
+                        <input type="range" id="slice-slider" class="slider" min="0" max="100" value="50">
+                        <span class="slice-label" id="slice-label">Slice 50 / 100</span>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📊</span> Cross-Section Profile
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="profile-chart" width="300" height="180"></canvas>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Process Modal -->
+    <div id="process-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <h2 class="modal-title">Process New Scan</h2>
+            <div class="form-group">
+                <label class="form-label">Path to DICOM folder or NIfTI file</label>
+                <input type="text" id="input-path" class="form-input" placeholder="/path/to/dicom/folder">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Scan ID (optional)</label>
+                <input type="text" id="input-scan-id" class="form-input" placeholder="Auto-generated if empty">
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-process" class="btn btn-ghost">Cancel</button>
+                <button id="btn-start-process" class="btn btn-accent">Start Processing</button>
+            </div>
+            <div id="process-status" class="process-status hidden">
+                <div class="process-spinner"></div>
+                <span id="process-status-text">Processing...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/viewer3d.js"></script>
+    <script type="module" src="js/sliceViewer.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

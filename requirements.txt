@@ -1,0 +1,13 @@
+SimpleITK>=2.0
+torch>=2.0
+numpy
+scipy
+scikit-image
+scikit-learn
+nibabel
+fastapi
+uvicorn[standard]
+python-multipart
+Pillow
+nnunet==1.7.0
+torchvision

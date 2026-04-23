@@ -1,0 +1,15 @@
+# Ignore data and generated files
+processed_data/
+nnUNet_raw_data/
+nnUNet_results/
+nnUNet_predictions/
+*.nii
+*.nii.gz
+*.glb
+
+# Ignore python cache
+__pycache__/
+*.pyc
+
+# Ignore OS files
+.DS_Store
