@@ -9,5 +9,4 @@ fastapi
 uvicorn[standard]
 python-multipart
 Pillow
-nnunet==1.7.0
-torchvision
+TotalSegmentator
