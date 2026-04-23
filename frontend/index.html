@@ -99,6 +99,23 @@
                             <span class="switch-slider"></span>
                         </label>
                     </div>
+                    <div class="control-group">
+                        <label class="control-label">Context Layers</label>
+                        <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" id="toggle-body" class="context-toggle" data-layer="body" style="accent-color: var(--accent);">
+                                Skin / Body Contour
+                            </label>
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" id="toggle-heart" class="context-toggle" data-layer="heart" style="accent-color: var(--accent);">
+                                Heart
+                            </label>
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" id="toggle-vessels" class="context-toggle" data-layer="vessels" style="accent-color: var(--accent);">
+                                Blood Vessels (Aorta & PA)
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel-section">

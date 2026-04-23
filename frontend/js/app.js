@@ -143,6 +143,16 @@ async function loadScan(scanId) {
             console.warn("Could not load healthy mesh:", e);
         }
 
+        // Load context meshes
+        const contextLayers = ["body", "heart", "aorta", "pulmonary_artery"];
+        for (const layer of contextLayers) {
+            try {
+                await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/${layer}`, layer);
+            } catch (e) {
+                console.warn(`Could not load ${layer} mesh:`, e);
+            }
+        }
+
         // Load morph frames
         const morphRes = await fetch(`${API_BASE}/api/scan/${scanId}/morph_count`);
         const { count } = await morphRes.json();
@@ -285,13 +295,22 @@ function setupEvents() {
     opacitySlider.addEventListener("input", (e) => {
         viewer3d.setOpacity(parseInt(e.target.value) / 100);
     });
-
-    // Wireframe
+    const wireframeToggle = document.getElementById("wireframe-toggle");
     wireframeToggle.addEventListener("change", (e) => {
-        viewer3d.setWireframe(e.target.checked);
+        if (viewer3d) viewer3d.setWireframe(e.target.checked);
     });
 
-    // Slice tabs
+    // Context Toggles
+    const contextToggles = document.querySelectorAll(".context-toggle");
+    contextToggles.forEach(toggle => {
+        toggle.addEventListener("change", (e) => {
+            if (viewer3d) {
+                viewer3d.setContextVisibility(e.target.dataset.layer, e.target.checked);
+            }
+        });
+    });
+
+    // Morph Controls
     sliceTabs.forEach((tab) => {
         tab.addEventListener("click", () => {
             sliceTabs.forEach((t) => t.classList.remove("active"));

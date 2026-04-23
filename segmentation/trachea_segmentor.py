@@ -23,18 +23,19 @@ class TracheaSegmentor:
         print("[1/3] Preprocessing CT scan for TotalSegmentator...")
         resampled, lung_mask, normalized = preprocess_ct(image, self.target_spacing)
 
-        print("[2/3] Running TotalSegmentator AI (This isolates the exact trachea anatomy)...")
+        print("[2/3] Running TotalSegmentator AI (This isolates the exact anatomy)...")
         # TotalSegmentator works best via files. We'll write the resampled image.
         temp_in = "temp_ct_scan.nii.gz"
-        temp_out = "temp_trachea_mask.nii.gz"
+        temp_out_dir = "temp_masks"
         
         sitk.WriteImage(resampled, temp_in)
+        os.makedirs(temp_out_dir, exist_ok=True)
         
         cmd = [
             "TotalSegmentator",
             "-i", temp_in,
-            "-o", temp_out,
-            "--roi_subset", "trachea"
+            "-o", temp_out_dir,
+            "--roi_subset", "trachea", "aorta", "pulmonary_artery", "heart"
         ]
         
         if self.device in ["cuda", "mps"]:
@@ -46,29 +47,61 @@ class TracheaSegmentor:
         print(f"  Executing: {' '.join(cmd)}")
         subprocess.run(cmd, check=True)
         
-        if not os.path.exists(temp_out):
-            raise RuntimeError("TotalSegmentator failed to generate a mask.")
+        if not os.path.exists(os.path.join(temp_out_dir, "trachea.nii.gz")):
+            raise RuntimeError("TotalSegmentator failed to generate a trachea mask.")
             
-        refined_mask = sitk.ReadImage(temp_out)
+        # Read the segmented masks
+        masks = {}
+        for organ in ["trachea", "aorta", "pulmonary_artery", "heart"]:
+            mask_path = os.path.join(temp_out_dir, f"{organ}.nii.gz")
+            if os.path.exists(mask_path):
+                masks[organ] = sitk.ReadImage(mask_path)
+            else:
+                # Create empty mask if an organ wasn't found
+                empty = sitk.Image(resampled.GetSize(), sitk.sitkUInt8)
+                empty.CopyInformation(resampled)
+                masks[organ] = empty
+
+        refined_mask = masks["trachea"]
+
+        # Extract body contour by thresholding HU > -500
+        print("[2.5/3] Extracting body/skin contour...")
+        resampled_arr = sitk.GetArrayFromImage(resampled)
+        body_arr = (resampled_arr > -500).astype(np.uint8)
         
+        # Simple morphological closing to fill small holes and smooth skin
+        body_arr = ndimage.binary_dilation(body_arr, iterations=2)
+        body_arr = ndimage.binary_erosion(body_arr, iterations=2).astype(np.uint8)
+        
+        body_mask = sitk.GetImageFromArray(body_arr)
+        body_mask.CopyInformation(resampled)
+        masks["body"] = body_mask
+
         # Cleanup temp files
         if os.path.exists(temp_in):
             os.remove(temp_in)
-        if os.path.exists(temp_out):
-            os.remove(temp_out)
+        import shutil
+        if os.path.exists(temp_out_dir):
+            shutil.rmtree(temp_out_dir)
 
         print("[3/3] Extracting centerline and cross-sections...")
         centerline, cross_sections = self._extract_centerline(refined_mask, resampled)
 
         original_mask = resample_mask_like(refined_mask, image)
-
-        return {
+        
+        return_dict = {
             "trachea_mask": original_mask,
             "centerline": centerline,
             "cross_sections": cross_sections,
             "resampled_image": resampled,
             "resampled_mask": refined_mask,
         }
+        
+        # Resample all context masks back to original space
+        for organ in ["aorta", "pulmonary_artery", "heart", "body"]:
+            return_dict[f"{organ}_mask"] = resample_mask_like(masks[organ], image)
+            
+        return return_dict
 
     def _extract_centerline(self, mask, image):
         arr = sitk.GetArrayFromImage(mask)

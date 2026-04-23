@@ -67,9 +67,10 @@ async def get_scan(scan_id: str):
 
 @app.get("/api/scan/{scan_id}/mesh/{mesh_type}")
 async def get_mesh(scan_id: str, mesh_type: str):
-    """Serve a GLB mesh file (diseased or healthy)."""
-    if mesh_type not in ("diseased", "healthy"):
-        raise HTTPException(400, "mesh_type must be 'diseased' or 'healthy'")
+    """Serve a GLB mesh file."""
+    allowed = {"diseased", "healthy", "aorta", "pulmonary_artery", "heart", "body"}
+    if mesh_type not in allowed:
+        raise HTTPException(400, f"mesh_type must be one of {allowed}")
 
     path = os.path.join(OUTPUT_ROOT, scan_id, "meshes", f"{mesh_type}.glb")
     if not os.path.isfile(path):

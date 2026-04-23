@@ -82,6 +82,26 @@ class Pipeline:
             color=(0.2, 0.85, 0.5),
         )
 
+        # Context meshes (aorta, pulmonary artery, heart, body)
+        context_meshes = {}
+        for organ in ["aorta", "pulmonary_artery", "heart", "body"]:
+            if f"{organ}_mask" in seg_result:
+                print(f"  Generating {organ} mesh...")
+                # Body mesh doesn't need as much smoothing, but we decimate it heavily
+                sigma = 1.0 if organ == "body" else 1.5
+                mesh = self.mesh_gen.mask_to_mesh(seg_result[f"{organ}_mask"], smooth_sigma=sigma)
+                
+                colors = {
+                    "aorta": (0.8, 0.1, 0.1),
+                    "pulmonary_artery": (0.1, 0.1, 0.8),
+                    "heart": (0.6, 0.2, 0.2),
+                    "body": (0.9, 0.8, 0.7)
+                }
+                
+                glb_path = os.path.join(meshes_dir, f"{organ}.glb")
+                self.mesh_gen.export_glb(mesh, glb_path, color=colors[organ])
+                context_meshes[organ] = f"meshes/{organ}.glb"
+
         # Morph frames
         morph_dir = os.path.join(meshes_dir, "morph")
         morph_paths = self.mesh_gen.generate_morph_meshes(
@@ -100,6 +120,7 @@ class Pipeline:
             "meshes": {
                 "diseased": "meshes/diseased.glb",
                 "healthy": "meshes/healthy.glb",
+                "context": context_meshes,
                 "morph_frames": [
                     os.path.relpath(p, scan_dir) for p in morph_paths
                 ],

@@ -27,6 +27,17 @@ export class Viewer3D {
         this.diseasedMesh = null;
         this.healthyMesh = null;
         this.morphMeshes = [];
+        this.contextMeshes = {
+            body: null,
+            heart: null,
+            aorta: null,
+            pulmonary_artery: null
+        };
+        this.contextVisible = {
+            body: false,
+            heart: false,
+            vessels: false
+        };
         this.activeMorphFrame = -1;
 
         // State
@@ -158,6 +169,9 @@ export class Viewer3D {
                     } else if (type === "healthy") {
                         if (this.healthyMesh) this.scene.remove(this.healthyMesh);
                         this.healthyMesh = mesh;
+                    } else if (this.contextMeshes.hasOwnProperty(type)) {
+                        if (this.contextMeshes[type]) this.scene.remove(this.contextMeshes[type]);
+                        this.contextMeshes[type] = mesh;
                     }
 
                     this.scene.add(mesh);
@@ -201,24 +215,32 @@ export class Viewer3D {
 
     _createMaterial(type) {
         const colors = {
-            diseased: { color: 0xe84040, emissive: 0x3a0a0a },
-            healthy: { color: 0x34d399, emissive: 0x0a2a1a },
+            diseased: { color: 0xe84040, emissive: 0x3a0a0a, opacityMult: 1.0, rough: 0.55, metal: 0.1 },
+            healthy: { color: 0x34d399, emissive: 0x0a2a1a, opacityMult: 1.0, rough: 0.55, metal: 0.1 },
+            body: { color: 0xeeece0, emissive: 0x000000, opacityMult: 0.15, rough: 0.1, metal: 0.0, transmission: 0.9, ior: 1.3 },
+            heart: { color: 0x992222, emissive: 0x110000, opacityMult: 0.4, rough: 0.6, metal: 0.1 },
+            aorta: { color: 0xcc2222, emissive: 0x220000, opacityMult: 0.5, rough: 0.4, metal: 0.1 },
+            pulmonary_artery: { color: 0x2222cc, emissive: 0x000022, opacityMult: 0.5, rough: 0.4, metal: 0.1 }
         };
 
         const c = colors[type] || colors.diseased;
+        const targetOpacity = this.opacity * (c.opacityMult || 1.0);
 
         return new THREE.MeshPhysicalMaterial({
             color: c.color,
             emissive: c.emissive,
             emissiveIntensity: 0.15,
-            metalness: 0.1,
-            roughness: 0.55,
+            metalness: c.metal !== undefined ? c.metal : 0.1,
+            roughness: c.rough !== undefined ? c.rough : 0.55,
+            transmission: c.transmission || 0.0,
+            ior: c.ior || 1.5,
             transparent: true,
-            opacity: this.opacity,
+            opacity: targetOpacity,
             wireframe: this.wireframe,
             side: THREE.DoubleSide,
             clearcoat: 0.3,
             clearcoatRoughness: 0.4,
+            depthWrite: type !== "body" // Don't write depth for the body so internal organs render correctly
         });
     }
 
@@ -287,6 +309,20 @@ export class Viewer3D {
             this.healthyMesh.visible = (m === "healthy" || m === "both");
         }
 
+        // Context layers
+        if (this.contextMeshes.body) {
+            this.contextMeshes.body.visible = this.contextVisible.body;
+        }
+        if (this.contextMeshes.heart) {
+            this.contextMeshes.heart.visible = this.contextVisible.heart;
+        }
+        if (this.contextMeshes.aorta) {
+            this.contextMeshes.aorta.visible = this.contextVisible.vessels;
+        }
+        if (this.contextMeshes.pulmonary_artery) {
+            this.contextMeshes.pulmonary_artery.visible = this.contextVisible.vessels;
+        }
+
         // Hide morph meshes unless in morph mode
         for (const mesh of this.morphMeshes) {
             if (mesh) mesh.visible = false;
@@ -306,6 +342,13 @@ export class Viewer3D {
         }
         this.activeMorphFrame = index;
         if (this.displayMode === "morph") {
+            this._updateVisibility();
+        }
+    }
+
+    setContextVisibility(layer, isVisible) {
+        if (this.contextVisible.hasOwnProperty(layer)) {
+            this.contextVisible[layer] = isVisible;
             this._updateVisibility();
         }
     }
