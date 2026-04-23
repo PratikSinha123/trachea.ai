@@ -134,10 +134,37 @@ async def get_slice(scan_id: str, axis: str, index: int):
     sl = np.clip(sl, -1024, 600)
     sl = ((sl + 1024) / 1624 * 255).astype(np.uint8)
 
+    # Convert to RGB so we can overlay color
+    import cv2
+    rgb_sl = cv2.cvtColor(sl, cv2.COLOR_GRAY2RGB)
+
+    # Try to load and overlay the mask
+    mask_path = os.path.join(OUTPUT_ROOT, scan_id, "trachea_mask.nii.gz")
+    if os.path.isfile(mask_path):
+        try:
+            mask_image = sitk.ReadImage(mask_path)
+            mask_arr = sitk.GetArrayFromImage(mask_image)
+            if mask_arr.shape == arr.shape:
+                if axis == "axial":
+                    m_sl = mask_arr[index, :, :]
+                elif axis == "coronal":
+                    m_sl = mask_arr[:, index, :]
+                elif axis == "sagittal":
+                    m_sl = mask_arr[:, :, index]
+                
+                # Overlay cyan/red color where mask > 0
+                overlay = rgb_sl.copy()
+                overlay[m_sl > 0] = [52, 211, 153] # Emerald green/cyan for trachea
+                
+                # Blend with original
+                cv2.addWeighted(overlay, 0.35, rgb_sl, 0.65, 0, rgb_sl)
+        except Exception as e:
+            print(f"Warning: Failed to overlay mask: {e}")
+
     # Convert to PNG
     from io import BytesIO
     from PIL import Image
-    img = Image.fromarray(sl, mode="L")
+    img = Image.fromarray(rgb_sl, mode="RGB")
     buf = BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)

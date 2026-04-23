@@ -90,6 +90,10 @@ async function init() {
     setTimeout(() => {
         loadingScreen.classList.add("fade-out");
         appEl.classList.remove("hidden");
+        // Fix WebGL camera projection after unhiding container
+        if (viewer3d) {
+            viewer3d._onResize();
+        }
     }, 600);
 }
 
@@ -192,21 +196,24 @@ async function checkServer() {
 
 // ─── UI Updates ─────────────────────────────────────────────
 function updateStats(stats) {
-    const fmt = (v, unit = "") => v !== undefined && v !== null ? `${Number(v).toFixed(1)}${unit}` : "—";
+    if (!stats) stats = {};
+    const fmt = (v, unit = "") => v !== undefined && v !== null && !isNaN(v) ? `${Number(v).toFixed(1)}${unit}` : "—";
 
-    statElements.volDiseased.textContent = fmt(stats.diseased_volume_mm3 / 1000, " cm³");
-    statElements.volHealthy.textContent = fmt(stats.healthy_volume_mm3 / 1000, " cm³");
+    statElements.volDiseased.textContent = fmt(stats.diseased_volume_mm3 ? stats.diseased_volume_mm3 / 1000 : undefined, " cm³");
+    statElements.volHealthy.textContent = fmt(stats.healthy_volume_mm3 ? stats.healthy_volume_mm3 / 1000 : undefined, " cm³");
 
     const change = stats.volume_change_pct;
-    if (change !== undefined) {
+    if (change !== undefined && !isNaN(change)) {
         statElements.volChange.textContent = `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
         statElements.volChange.style.color = change > 0 ? "#34d399" : "#f87171";
+    } else {
+        statElements.volChange.textContent = "—";
     }
 
     statElements.avgDiam.textContent = fmt(stats.mean_diseased_diameter_mm, " mm");
     statElements.minDiam.textContent = fmt(stats.min_diseased_diameter_mm, " mm");
     statElements.stenosis.textContent = fmt(stats.max_stenosis_pct, "%");
-    statElements.anomalies.textContent = stats.num_anomalies !== undefined ? stats.num_anomalies : "—";
+    statElements.anomalies.textContent = stats.num_anomalies !== undefined && !isNaN(stats.num_anomalies) ? stats.num_anomalies : "—";
 }
 
 function updateAnomalies(anomalies) {
