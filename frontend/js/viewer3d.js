@@ -156,12 +156,37 @@ export class Viewer3D {
         requestAnimationFrame(() => this._animate());
         this.controls.update();
 
-        // Subtle breathing animation — slow pulsation
+        // 1. Organic breathing animation
         if (this._breathEnabled && this.diseasedMesh) {
-            this._breathT += 0.012;
-            const scale = 1.0 + 0.012 * Math.sin(this._breathT);
-            this.diseasedMesh.scale.setScalar(scale);
-            if (this.healthyMesh) this.healthyMesh.scale.setScalar(scale);
+            // Normal human breathing is ~15 breaths/min (4s per cycle). At 60fps: 0.026 rad/frame
+            this._breathT += 0.026;
+            
+            // Create a natural asymmetrical breathing curve
+            // Inhale is active (sine), exhale is passive (slows down)
+            const phase = Math.sin(this._breathT);
+            const breathIntensity = (phase + 1) / 2; // Normalize to 0..1
+
+            // Trachea expands radially (X/Z) but barely stretches longitudinally (Y)
+            const scaleX = 1.0 + 0.035 * breathIntensity;
+            const scaleY = 1.0 + 0.005 * breathIntensity;
+            const scaleZ = 1.0 + 0.030 * breathIntensity;
+            
+            this.diseasedMesh.scale.set(scaleX, scaleY, scaleZ);
+            if (this.healthyMesh) this.healthyMesh.scale.set(scaleX, scaleY, scaleZ);
+        }
+
+        // 2. Pulse the stenosis annotations (the yellow/red rings)
+        if (this.annotations && this.annotations.length > 0) {
+            const time = Date.now() * 0.003;
+            this.annotations.forEach(ring => {
+                // Subtle glowing pulse
+                if (ring.material) {
+                    ring.material.opacity = 0.6 + 0.4 * Math.sin(time);
+                }
+                // Gentle scaling pulse
+                const pulseScale = 1.0 + 0.04 * Math.sin(time);
+                ring.scale.set(pulseScale, pulseScale, pulseScale);
+            });
         }
 
         this.renderer.render(this.scene, this.camera);
@@ -509,13 +534,18 @@ export class Viewer3D {
             const yPos = box.min.y + zFrac * size.y;
 
             // Glowing ring at the stenosis position
-            const ringGeo = new THREE.TorusGeometry(size.x * 0.6, 0.8, 8, 32);
+            // Tighter radius (0.52 * bounding width) to hug the trachea, thinner tube (0.4)
+            const radius = Math.min(size.x, size.z) * 0.52;
+            const ringGeo = new THREE.TorusGeometry(radius, 0.4, 16, 64);
             const ringMat = new THREE.MeshBasicMaterial({
                 color: cs.deviation_pct > 40 ? 0xff2222 : cs.deviation_pct > 25 ? 0xffaa00 : 0xffff00,
                 transparent: true,
                 opacity: 0.85,
+                depthTest: false // Draw over the mesh slightly so it's always visible
             });
             const ring = new THREE.Mesh(ringGeo, ringMat);
+            // Render the ring after the mesh so depthTest: false works beautifully
+            ring.renderOrder = 10;
             ring.position.set(center.x, yPos, center.z);
             ring.rotation.x = Math.PI / 2;
             this.scene.add(ring);

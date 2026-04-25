@@ -141,6 +141,22 @@ async function loadScan(scanId) {
             }
         }
 
+        // Disable context toggles if the meshes don't exist in the current scan
+        document.querySelectorAll(".context-toggle").forEach(toggle => {
+            const layer = toggle.dataset.layer;
+            let hasMesh = false;
+            if (layer === "vessels") {
+                hasMesh = !!viewer3d.contextMeshes.aorta || !!viewer3d.contextMeshes.pulmonary_artery;
+            } else {
+                hasMesh = !!viewer3d.contextMeshes[layer];
+            }
+            
+            toggle.disabled = !hasMesh;
+            toggle.parentElement.style.opacity = hasMesh ? "1" : "0.4";
+            toggle.parentElement.title = hasMesh ? "" : "Segmentation data not available for this scan";
+            if (!hasMesh) toggle.checked = false;
+        });
+
         // Load morph frames — non-blocking background load
         const morphRes = await fetch(`${API_BASE}/api/scan/${scanId}/morph_count`);
         const { count } = await morphRes.json();
