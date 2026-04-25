@@ -34,19 +34,7 @@ const btnPlayMorph = document.getElementById("btn-play-morph");
 const opacitySlider = document.getElementById("opacity-slider");
 const wireframeToggle = document.getElementById("wireframe-toggle");
 
-// Stats
-const statElements = {
-    volDiseased: document.getElementById("stat-vol-diseased"),
-    volHealthy: document.getElementById("stat-vol-healthy"),
-    volChange: document.getElementById("stat-vol-change"),
-    avgDiam: document.getElementById("stat-avg-diam"),
-    minDiam: document.getElementById("stat-min-diam"),
-    stenosis: document.getElementById("stat-stenosis"),
-    anomalies: document.getElementById("stat-anomalies"),
-};
-
-// Anomalies
-const anomalyList = document.getElementById("anomaly-list");
+// Anomalies — now handled inside updateAnomalies via getElementById
 
 // Slice viewer
 const sliceTabs = document.querySelectorAll(".slice-tab");
@@ -216,43 +204,146 @@ async function checkServer() {
 // ─── UI Updates ─────────────────────────────────────────────
 function updateStats(stats) {
     if (!stats) stats = {};
-    const fmt = (v, unit = "") => v !== undefined && v !== null && !isNaN(v) ? `${Number(v).toFixed(1)}${unit}` : "—";
+    const fmt = (v, unit = "") => (v !== undefined && v !== null && !isNaN(Number(v)))
+        ? `${Number(v).toFixed(1)}${unit}` : "—";
 
-    statElements.volDiseased.textContent = fmt(stats.diseased_volume_mm3 ? stats.diseased_volume_mm3 / 1000 : undefined, " cm³");
-    statElements.volHealthy.textContent = fmt(stats.healthy_volume_mm3 ? stats.healthy_volume_mm3 / 1000 : undefined, " cm³");
+    // API field names (from curl output):
+    // volume_diseased_cm3, volume_healthy_cm3
+    // avg_diameter_diseased_mm, avg_diameter_healthy_mm
+    // min_diameter_mm, max_stenosis_pct, anomalies_found
 
-    const change = stats.volume_change_pct;
-    if (change !== undefined && !isNaN(change)) {
-        statElements.volChange.textContent = `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
-        statElements.volChange.style.color = change > 0 ? "#34d399" : "#f87171";
+    const dVol = stats.volume_diseased_cm3;
+    const hVol = stats.volume_healthy_cm3;
+    const dAvg = stats.avg_diameter_diseased_mm;
+    const hAvg = stats.avg_diameter_healthy_mm;
+    const minD = stats.min_diameter_mm;
+    const maxS = stats.max_stenosis_pct;
+    const numA = stats.anomalies_found;
+
+    document.getElementById("stat-vol-diseased").textContent = fmt(dVol, " cm³");
+    document.getElementById("stat-vol-healthy").textContent  = fmt(hVol, " cm³");
+
+    // Volume reduction (positive = airway got smaller = bad)
+    const volChangeEl = document.getElementById("stat-vol-change");
+    if (dVol !== undefined && hVol !== undefined && hVol > 0) {
+        const reduction = ((hVol - dVol) / hVol * 100).toFixed(1);
+        volChangeEl.textContent = `${reduction}%`;
+        volChangeEl.style.color = reduction > 20 ? "#f87171" : reduction > 10 ? "#facc15" : "#34d399";
     } else {
-        statElements.volChange.textContent = "—";
+        volChangeEl.textContent = "—";
     }
 
-    statElements.avgDiam.textContent = fmt(stats.mean_diseased_diameter_mm, " mm");
-    statElements.minDiam.textContent = fmt(stats.min_diseased_diameter_mm, " mm");
-    statElements.stenosis.textContent = fmt(stats.max_stenosis_pct, "%");
-    statElements.anomalies.textContent = stats.num_anomalies !== undefined && !isNaN(stats.num_anomalies) ? stats.num_anomalies : "—";
+    document.getElementById("stat-avg-diam").textContent   = fmt(dAvg, " mm");
+    document.getElementById("stat-avg-diam-h").textContent = fmt(hAvg, " mm");
+
+    const minDEl = document.getElementById("stat-min-diam");
+    minDEl.textContent = fmt(minD, " mm");
+    // Clinical thresholds: < 10mm = critical, < 15mm = severe
+    minDEl.style.color = minD !== undefined
+        ? (minD < 10 ? "#ef4444" : minD < 15 ? "#f87171" : minD < 20 ? "#facc15" : "#34d399")
+        : "inherit";
+
+    const stenosisEl = document.getElementById("stat-stenosis");
+    stenosisEl.textContent = fmt(maxS, "%");
+    stenosisEl.style.color = maxS !== undefined
+        ? (maxS > 50 ? "#ef4444" : maxS > 30 ? "#f87171" : maxS > 15 ? "#facc15" : "#34d399")
+        : "inherit";
+
+    // Stenosis progress bar
+    const bar = document.getElementById("stenosis-bar");
+    if (bar && maxS !== undefined) {
+        bar.style.width = `${Math.min(maxS, 100)}%`;
+    }
+
+    document.getElementById("stat-anomalies").textContent = (numA !== undefined && !isNaN(numA)) ? numA : "—";
+
+    // Clinical severity badge
+    const badge = document.getElementById("severity-badge");
+    const sevLabel = document.getElementById("severity-label");
+    const sevSub = document.getElementById("severity-sub");
+    const sevIcon = document.getElementById("severity-icon");
+    if (badge && maxS !== undefined) {
+        badge.style.display = "block";
+        if (maxS >= 50) {
+            badge.style.background = "rgba(239,68,68,0.15)";
+            badge.style.borderColor = "rgba(239,68,68,0.4)";
+            sevIcon.textContent = "🚨";
+            sevLabel.textContent = "CRITICAL Stenosis ≥ 50%";
+            sevLabel.style.color = "#ef4444";
+            sevSub.textContent = "Immediate intervention required";
+        } else if (maxS >= 30) {
+            badge.style.background = "rgba(248,113,113,0.12)";
+            badge.style.borderColor = "rgba(248,113,113,0.3)";
+            sevIcon.textContent = "⚠️";
+            sevLabel.textContent = `Severe Stenosis — ${maxS.toFixed(0)}% narrowing`;
+            sevLabel.style.color = "#f87171";
+            sevSub.textContent = "Clinical evaluation recommended";
+        } else if (maxS >= 15) {
+            badge.style.background = "rgba(250,204,21,0.10)";
+            badge.style.borderColor = "rgba(250,204,21,0.3)";
+            sevIcon.textContent = "⚠️";
+            sevLabel.textContent = `Moderate Stenosis — ${maxS.toFixed(0)}% narrowing`;
+            sevLabel.style.color = "#facc15";
+            sevSub.textContent = "Monitor and follow-up";
+        } else {
+            badge.style.background = "rgba(52,211,153,0.10)";
+            badge.style.borderColor = "rgba(52,211,153,0.3)";
+            sevIcon.textContent = "✅";
+            sevLabel.textContent = "Airway within normal limits";
+            sevLabel.style.color = "#34d399";
+            sevSub.textContent = "No significant stenosis detected";
+        }
+    }
 }
 
 function updateAnomalies(anomalies) {
-    if (!anomalies.length) {
+    const anomalyList = document.getElementById("anomaly-list");
+    if (!anomalyList) return;
+
+    if (!anomalies || !anomalies.length) {
         anomalyList.innerHTML = '<p class="placeholder-text">No anomalies detected</p>';
         return;
     }
 
+    // Sort by severity (highest deviation first), show top 10
+    const sorted = [...anomalies].sort((a, b) => (b.deviation_pct || 0) - (a.deviation_pct || 0)).slice(0, 10);
     anomalyList.innerHTML = "";
-    for (const a of anomalies) {
+
+    for (const a of sorted) {
+        const pct = a.deviation_pct?.toFixed(0) ?? "?";
+        const diam = a.diseased_diameter_mm?.toFixed(1) ?? "?";
+        const expected = a.expected_diameter_mm?.toFixed(1) ?? "?";
+        const z = a.z_physical?.toFixed(1) ?? "?";
+
+        const severity = (a.deviation_pct >= 50) ? "critical" : (a.deviation_pct >= 30) ? "severe" : "moderate";
+        const severityColor = severity === "critical" ? "#ef4444" : severity === "severe" ? "#f87171" : "#facc15";
+        const borderColor = severityColor + "44";
+
         const div = document.createElement("div");
-        div.className = `anomaly-item ${a.type}`;
+        div.className = `anomaly-item stenosis`;
+        div.style.cssText = `border-left: 3px solid ${severityColor}; margin-bottom: 8px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 0 6px 6px 0;`;
         div.innerHTML = `
-            <div class="anomaly-type ${a.type}">${a.type.toUpperCase()}</div>
-            <div class="anomaly-detail">
-                Z: ${a.z_mm?.toFixed(1)} mm · ${a.observed_mm?.toFixed(1)} mm
-                (expected ${a.expected_mm?.toFixed(1)} mm) · ${a.deviation_pct?.toFixed(0)}% deviation
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:11px; font-weight:700; color:${severityColor}; text-transform:uppercase; letter-spacing:0.05em;">${severity} ${a.type || "Stenosis"}</span>
+                <span style="font-size:13px; font-weight:700; color:${severityColor};">${pct}%</span>
+            </div>
+            <div style="font-size:11px; color:#9ca3af; line-height:1.5;">
+                <span>📍 Z: ${z} mm</span>&nbsp;&nbsp;
+                <span>⌀ ${diam} mm</span>&nbsp;&nbsp;
+                <span style="color:#6b7280;">→ expected ${expected} mm</span>
+            </div>
+            <div style="margin-top:5px; background:rgba(255,255,255,0.07); border-radius:3px; height:4px;">
+                <div style="height:100%; width:${Math.min(a.deviation_pct||0,100)}%; background:${severityColor}; border-radius:3px;"></div>
             </div>
         `;
         anomalyList.appendChild(div);
+    }
+
+    if (anomalies.length > 10) {
+        const more = document.createElement("p");
+        more.style.cssText = "text-align:center; font-size:11px; color:#6b7280; margin-top:8px;";
+        more.textContent = `+ ${anomalies.length - 10} more stenotic zones`;
+        anomalyList.appendChild(more);
     }
 }
 

@@ -147,33 +147,57 @@
                     <h3 class="section-title">
                         <span class="section-icon">📐</span> Measurements
                     </h3>
+
+                    <!-- Clinical severity badge -->
+                    <div id="severity-badge" style="display:none; margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3);">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span id="severity-icon" style="font-size:18px;">⚠️</span>
+                            <div>
+                                <div id="severity-label" style="font-size:13px; font-weight:600; color:#f87171;">Severe Stenosis Detected</div>
+                                <div id="severity-sub" style="font-size:11px; color:#9ca3af; margin-top:2px;">Requires immediate clinical review</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="stats-container" class="stats-container">
-                        <div class="stat-card">
-                            <span class="stat-label">Volume (Diseased)</span>
+                        <!-- Row 1: Volumes -->
+                        <div class="stat-card" title="Volume of diseased trachea lumen">
+                            <span class="stat-label">🔴 Diseased Vol.</span>
                             <span class="stat-value" id="stat-vol-diseased">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Volume (Healthy)</span>
+                        <div class="stat-card" title="Volume of healthy/predicted trachea lumen">
+                            <span class="stat-label">🟢 Healthy Vol.</span>
                             <span class="stat-value" id="stat-vol-healthy">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Volume Change</span>
+                        <div class="stat-card" title="Volume reduction due to disease">
+                            <span class="stat-label">📉 Vol. Reduction</span>
                             <span class="stat-value" id="stat-vol-change">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Avg Diameter</span>
+
+                        <!-- Row 2: Diameters -->
+                        <div class="stat-card" title="Average tracheal diameter in diseased state">
+                            <span class="stat-label">⌀ Avg Diam (D)</span>
                             <span class="stat-value" id="stat-avg-diam">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Min Diameter</span>
-                            <span class="stat-value" id="stat-min-diam">—</span>
+                        <div class="stat-card" title="Average tracheal diameter in healthy state">
+                            <span class="stat-label">⌀ Avg Diam (H)</span>
+                            <span class="stat-value" id="stat-avg-diam-h">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Max Stenosis</span>
-                            <span class="stat-value" id="stat-stenosis">—</span>
+                        <div class="stat-card" title="Narrowest point in the airway — critical for breathing">
+                            <span class="stat-label">⚠ Min Diameter</span>
+                            <span class="stat-value" id="stat-min-diam" style="color:#f87171;">—</span>
                         </div>
-                        <div class="stat-card">
-                            <span class="stat-label">Anomalies Found</span>
+
+                        <!-- Row 3: Stenosis -->
+                        <div class="stat-card" style="grid-column: span 2;" title="Maximum stenosis percentage — how much the airway is narrowed at worst point">
+                            <span class="stat-label">🩺 Max Stenosis</span>
+                            <span class="stat-value" id="stat-stenosis" style="font-size:20px;">—</span>
+                            <div id="stenosis-bar-wrap" style="margin-top:6px; background:rgba(255,255,255,0.07); border-radius:4px; height:6px; overflow:hidden;">
+                                <div id="stenosis-bar" style="height:100%; width:0%; background: linear-gradient(90deg,#34d399,#facc15,#f87171); border-radius:4px; transition: width 0.8s ease;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card" title="Number of stenotic regions detected by AI">
+                            <span class="stat-label">🔢 Stenotic Zones</span>
                             <span class="stat-value" id="stat-anomalies">—</span>
                         </div>
                     </div>
@@ -181,7 +205,7 @@
 
                 <div class="panel-section">
                     <h3 class="section-title">
-                        <span class="section-icon">⚠️</span> Anomalies
+                        <span class="section-icon">⚠️</span> Anomaly Detail
                     </h3>
                     <div id="anomaly-list" class="anomaly-list">
                         <p class="placeholder-text">Load a scan to view anomalies</p>
@@ -278,7 +302,7 @@
     }
     </script>
     <script type="module" src="js/viewer3d.js"></script>
-    <script type="module" src="js/sliceViewer.js?v=6"></script>
-    <script type="module" src="js/app.js?v=6"></script>
+    <script type="module" src="js/sliceViewer.js?v=7"></script>
+    <script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>
