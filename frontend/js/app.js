@@ -141,22 +141,44 @@ async function loadScan(scanId) {
             }
         }
 
-        // Load morph frames
+        // Load morph frames — non-blocking background load
         const morphRes = await fetch(`${API_BASE}/api/scan/${scanId}/morph_count`);
         const { count } = await morphRes.json();
         morphFrameCount = count;
         morphSlider.max = Math.max(0, count - 1);
+        morphSlider.value = 0;
+        morphFrameLabel.textContent = `Loading… 0 / ${count - 1}`;
 
         viewer3d.morphMeshes = new Array(count).fill(null);
-        for (let i = 0; i < count; i++) {
+
+        // Load first frame synchronously so morph mode shows something immediately
+        if (count > 0) {
             try {
-                await viewer3d.loadMorphFrame(
-                    `${API_BASE}/api/scan/${scanId}/morph/${i}`, i
-                );
+                await viewer3d.loadMorphFrame(`${API_BASE}/api/scan/${scanId}/morph/0`, 0);
+                morphFrameLabel.textContent = `0 / ${count - 1}`;
             } catch (e) {
-                console.warn(`Morph frame ${i} failed:`, e);
+                console.warn("Morph frame 0 failed:", e);
             }
         }
+
+        // Load remaining frames in background — don't await
+        (async () => {
+            let loaded = 1;
+            for (let i = 1; i < count; i++) {
+                try {
+                    await viewer3d.loadMorphFrame(`${API_BASE}/api/scan/${scanId}/morph/${i}`, i);
+                    loaded++;
+                    // Update label only if still in morph mode
+                    if (viewer3d.displayMode === "morph") {
+                        morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1} (${loaded}/${count} loaded)`;
+                    }
+                } catch (e) {
+                    console.warn(`Morph frame ${i} failed:`, e);
+                }
+            }
+            morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1}`;
+            console.log(`✅ All ${count} morph frames loaded`);
+        })();
 
         // Update stats
         updateStats(meta.stats || {});
@@ -360,6 +382,13 @@ function setupEvents() {
             const mode = btn.dataset.mode;
             viewer3d.setDisplayMode(mode);
             morphControls.style.display = mode === "morph" ? "block" : "none";
+
+            // When switching to morph mode, jump to frame 0 immediately
+            if (mode === "morph") {
+                const frame = parseInt(morphSlider.value) || 0;
+                viewer3d.setMorphFrame(frame);
+                morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${morphFrameCount - 1}`;
+            }
         });
     });
 
@@ -367,7 +396,12 @@ function setupEvents() {
     morphSlider.addEventListener("input", (e) => {
         const frame = parseInt(e.target.value);
         viewer3d.setMorphFrame(frame);
-        morphFrameLabel.textContent = `${frame} / ${morphFrameCount - 1}`;
+        // Show actual frame being displayed (may differ if not yet loaded)
+        const actual = viewer3d.activeMorphFrame;
+        const total = morphFrameCount - 1;
+        morphFrameLabel.textContent = actual !== frame
+            ? `${actual} / ${total} (nearest to ${frame})`
+            : `${actual} / ${total}`;
     });
 
     // Play morph

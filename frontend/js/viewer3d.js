@@ -413,10 +413,19 @@ export class Viewer3D {
             if (mesh) mesh.visible = false;
         }
 
-        if (m === "morph" && this.activeMorphFrame >= 0 && this.morphMeshes[this.activeMorphFrame]) {
+        if (m === "morph") {
             if (this.diseasedMesh) this.diseasedMesh.visible = false;
             if (this.healthyMesh) this.healthyMesh.visible = false;
-            this.morphMeshes[this.activeMorphFrame].visible = true;
+
+            // Auto-select first loaded frame if none active yet
+            if (this.activeMorphFrame < 0) {
+                const firstLoaded = this.morphMeshes.findIndex(x => x !== null);
+                if (firstLoaded >= 0) this.activeMorphFrame = firstLoaded;
+            }
+
+            if (this.activeMorphFrame >= 0 && this.morphMeshes[this.activeMorphFrame]) {
+                this.morphMeshes[this.activeMorphFrame].visible = true;
+            }
         }
     }
 
@@ -426,8 +435,21 @@ export class Viewer3D {
             this.morphMeshes[this.activeMorphFrame].visible = false;
         }
         this.activeMorphFrame = index;
+        // Show this frame if in morph mode
         if (this.displayMode === "morph") {
-            this._updateVisibility();
+            if (this.diseasedMesh) this.diseasedMesh.visible = false;
+            if (this.healthyMesh) this.healthyMesh.visible = false;
+            // Show nearest available frame if exact not loaded yet
+            let target = index;
+            while (target >= 0 && !this.morphMeshes[target]) target--;
+            if (target < 0) {
+                target = index;
+                while (target < this.morphMeshes.length && !this.morphMeshes[target]) target++;
+            }
+            if (target >= 0 && target < this.morphMeshes.length && this.morphMeshes[target]) {
+                this.morphMeshes[target].visible = true;
+                this.activeMorphFrame = target;
+            }
         }
     }
 

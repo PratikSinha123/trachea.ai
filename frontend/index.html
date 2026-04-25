@@ -75,18 +75,25 @@
                         </div>
                     </div>
                     <div class="control-group" id="morph-controls" style="display:none">
-                        <label class="control-label">Morphing Timeline</label>
+                        <label class="control-label" style="color:#a78bfa;">🔄 Disease → Recovery Timeline</label>
+
+                        <!-- Color legend -->
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
+                            <span style="font-size:10px; color:#f87171; font-weight:600;">🔴 Diseased</span>
+                            <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #f87171, #facc15, #34d399);"></div>
+                            <span style="font-size:10px; color:#34d399; font-weight:600;">Healthy 🟢</span>
+                        </div>
+
                         <div class="morph-slider-container">
                             <input type="range" id="morph-slider" class="morph-slider" min="0" max="20" value="0" step="1">
-                            <div class="morph-labels">
-                                <span class="morph-label-diseased">Diseased</span>
-                                <span class="morph-label-healthy">Healthy</span>
-                            </div>
                         </div>
                         <div class="morph-playback">
                             <button id="btn-play-morph" class="btn btn-sm btn-ghost">▶ Play</button>
-                            <span id="morph-frame-label" class="morph-frame-label">0 / 20</span>
+                            <span id="morph-frame-label" class="morph-frame-label">Loading…</span>
                         </div>
+                        <p style="font-size:10px; color:#6b7280; margin-top:6px; line-height:1.4;">
+                            Each step interpolates between diseased and healthy anatomy. Drag slider or press Play to animate.
+                        </p>
                     </div>
                     <div class="control-group">
                         <label class="control-label">Opacity</label>
@@ -302,7 +309,7 @@
     }
     </script>
     <script type="module" src="js/viewer3d.js"></script>
-    <script type="module" src="js/sliceViewer.js?v=7"></script>
-    <script type="module" src="js/app.js?v=7"></script>
+    <script type="module" src="js/sliceViewer.js?v=8"></script>
+    <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
