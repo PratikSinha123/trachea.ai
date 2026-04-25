@@ -47,9 +47,11 @@ class MeshGenerator:
             return {"vertices": np.empty((0, 3)), "faces": np.empty((0, 3), dtype=int),
                     "normals": np.empty((0, 3))}
 
-        # Smooth the volume for better mesh quality
+        # Heavy Gaussian pre-smoothing for organic feel
+        # Apply multiple passes: broad + fine
         if smooth_sigma > 0:
-            arr = gaussian_filter(arr, sigma=smooth_sigma)
+            arr = gaussian_filter(arr, sigma=smooth_sigma * 2.0)   # broad pass
+            arr = gaussian_filter(arr, sigma=smooth_sigma * 0.8)   # fine pass
 
         # Marching cubes — note SimpleITK uses (x,y,z) spacing but array is (z,y,x)
         spacing_zyx = (spacing[2], spacing[1], spacing[0])
@@ -61,7 +63,7 @@ class MeshGenerator:
             return {"vertices": np.empty((0, 3)), "faces": np.empty((0, 3), dtype=int),
                     "normals": np.empty((0, 3))}
 
-        # Laplacian smoothing
+        # Vectorized Laplacian smoothing (fast NumPy — no Python loops per vertex)
         if self.smooth_iterations > 0:
             verts = self._laplacian_smooth(verts, faces, self.smooth_iterations)
             # Recompute normals after smoothing
@@ -73,28 +75,26 @@ class MeshGenerator:
 
         return {"vertices": verts, "faces": faces, "normals": normals}
 
-    def _laplacian_smooth(self, vertices, faces, iterations=15, lam=0.5):
-        """Apply Laplacian smoothing to mesh vertices."""
+    def _laplacian_smooth(self, vertices, faces, iterations=30, lam=0.6):
+        """Apply Laplacian smoothing using fast vectorized NumPy operations."""
         n_verts = len(vertices)
         smoothed = vertices.copy()
 
-        # Build adjacency from faces
-        adjacency = [set() for _ in range(n_verts)]
-        for f in faces:
-            for i in range(3):
-                for j in range(3):
-                    if i != j:
-                        adjacency[f[i]].add(f[j])
+        # Build COO-style edge list from faces (vectorized)
+        i0 = faces[:, 0]; i1 = faces[:, 1]; i2 = faces[:, 2]
+        rows = np.concatenate([i0, i1, i2, i1, i2, i0])
+        cols = np.concatenate([i1, i2, i0, i0, i1, i2])
+        # Use sparse matrix for fast neighbor averaging
+        from scipy.sparse import coo_matrix
+        data = np.ones(len(rows))
+        adj = coo_matrix((data, (rows, cols)), shape=(n_verts, n_verts)).tocsr()
+        # Degree (number of neighbors per vertex)
+        degree = np.array(adj.sum(axis=1)).ravel()[:, None].clip(1)
 
         for _ in range(iterations):
-            new_verts = smoothed.copy()
-            for i in range(n_verts):
-                if not adjacency[i]:
-                    continue
-                neighbors = list(adjacency[i])
-                centroid = smoothed[neighbors].mean(axis=0)
-                new_verts[i] = smoothed[i] + lam * (centroid - smoothed[i])
-            smoothed = new_verts
+            neighbor_sum = adj.dot(smoothed)
+            centroid = neighbor_sum / degree
+            smoothed = smoothed + lam * (centroid - smoothed)
 
         return smoothed
 
@@ -192,10 +192,17 @@ class MeshGenerator:
                 }]
             }],
             "materials": [{
+                "name": "TracheaTissue",
                 "pbrMetallicRoughness": {
                     "baseColorFactor": [color[0], color[1], color[2], 1.0],
-                    "metallicFactor": 0.1,
-                    "roughnessFactor": 0.7,
+                    "metallicFactor": 0.0,
+                    "roughnessFactor": 0.55,
+                },
+                "extensions": {
+                    "KHR_materials_sheen": {
+                        "sheenColorFactor": [0.9, 0.6, 0.6],
+                        "sheenRoughnessFactor": 0.3
+                    }
                 },
                 "doubleSided": True,
             }],

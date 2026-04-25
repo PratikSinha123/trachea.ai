@@ -62,7 +62,7 @@ export class Viewer3D {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.toneMappingExposure = 1.6;
 
         // Scene
         this.scene = new THREE.Scene();
@@ -99,28 +99,35 @@ export class Viewer3D {
     }
 
     _setupLighting() {
-        // Ambient
-        const ambient = new THREE.AmbientLight(0x404060, 0.6);
+        // Warm ambient — like an operating theatre, not a dark cave
+        const ambient = new THREE.AmbientLight(0xffe5d0, 0.9);
         this.scene.add(ambient);
 
-        // Key light
-        const key = new THREE.DirectionalLight(0xffeedd, 1.2);
-        key.position.set(100, 200, 150);
+        // Primary surgical key light — bright, warm white
+        const key = new THREE.DirectionalLight(0xfff8f0, 2.2);
+        key.position.set(80, 180, 200);
         key.castShadow = true;
+        key.shadow.mapSize.width = 2048;
+        key.shadow.mapSize.height = 2048;
         this.scene.add(key);
 
-        // Fill light
-        const fill = new THREE.DirectionalLight(0x88aacc, 0.5);
-        fill.position.set(-100, 50, -100);
+        // Soft fill from the left (reduces harsh shadows)
+        const fill = new THREE.DirectionalLight(0xffe0d0, 0.9);
+        fill.position.set(-150, 80, 100);
         this.scene.add(fill);
 
-        // Rim light (cyan accent)
-        const rim = new THREE.DirectionalLight(0x22d3ee, 0.4);
-        rim.position.set(0, -100, -200);
-        this.scene.add(rim);
+        // Warm back-light (simulates tissue translucency / subsurface scatter)
+        const back = new THREE.DirectionalLight(0xff9060, 0.7);
+        back.position.set(0, -100, -200);
+        this.scene.add(back);
 
-        // Hemisphere light for natural feel
-        const hemi = new THREE.HemisphereLight(0xffffff, 0x444466, 0.3);
+        // Top-down light for realistic depth
+        const top = new THREE.DirectionalLight(0xffffff, 0.5);
+        top.position.set(0, 300, 0);
+        this.scene.add(top);
+
+        // Hemisphere for gentle sky/ground gradient
+        const hemi = new THREE.HemisphereLight(0xfff5ee, 0x3a1a10, 0.4);
         this.scene.add(hemi);
     }
 
@@ -214,33 +221,75 @@ export class Viewer3D {
     }
 
     _createMaterial(type) {
-        const colors = {
-            diseased: { color: 0xe84040, emissive: 0x3a0a0a, opacityMult: 1.0, rough: 0.55, metal: 0.1 },
-            healthy: { color: 0x34d399, emissive: 0x0a2a1a, opacityMult: 1.0, rough: 0.55, metal: 0.1 },
-            body: { color: 0xeeece0, emissive: 0x000000, opacityMult: 0.15, rough: 0.1, metal: 0.0, transmission: 0.9, ior: 1.3 },
-            heart: { color: 0x992222, emissive: 0x110000, opacityMult: 0.4, rough: 0.6, metal: 0.1 },
-            aorta: { color: 0xcc2222, emissive: 0x220000, opacityMult: 0.5, rough: 0.4, metal: 0.1 },
-            pulmonary_artery: { color: 0x2222cc, emissive: 0x000022, opacityMult: 0.5, rough: 0.4, metal: 0.1 }
+        // Real tissue-like materials
+        const configs = {
+            // Diseased trachea: pinkish-red like inflamed/diseased airway tissue
+            diseased: {
+                color: 0xc94040,
+                emissive: 0x3a1010,
+                emissiveIntensity: 0.08,
+                roughness: 0.62,
+                metalness: 0.0,
+                clearcoat: 0.6,         // wet tissue surface
+                clearcoatRoughness: 0.25,
+                sheen: 0.4,
+                sheenColor: 0xe87070,
+                sheenRoughness: 0.5,
+                opacityMult: 1.0,
+            },
+            // Healthy trachea: warm pink-salmon, slightly lighter
+            healthy: {
+                color: 0xe87070,
+                emissive: 0x1a0808,
+                emissiveIntensity: 0.05,
+                roughness: 0.55,
+                metalness: 0.0,
+                clearcoat: 0.7,
+                clearcoatRoughness: 0.2,
+                sheen: 0.5,
+                sheenColor: 0xf0a0a0,
+                sheenRoughness: 0.4,
+                opacityMult: 1.0,
+            },
+            // 'Both' overlay ghost for healthy — transparent blue-green
+            healthy_ghost: {
+                color: 0x34d399,
+                emissive: 0x0a2a1a,
+                emissiveIntensity: 0.2,
+                roughness: 0.3,
+                metalness: 0.0,
+                clearcoat: 0.2,
+                clearcoatRoughness: 0.5,
+                opacityMult: 0.28,
+            },
+            // Context layers
+            body: { color: 0xf0e8e0, emissive: 0x000000, emissiveIntensity: 0, roughness: 0.1, metalness: 0.0, transmission: 0.92, ior: 1.3, clearcoat: 0.0, opacityMult: 0.12, depthWrite: false },
+            heart: { color: 0x8b2020, emissive: 0x200505, emissiveIntensity: 0.1, roughness: 0.65, metalness: 0.0, clearcoat: 0.4, clearcoatRoughness: 0.3, opacityMult: 0.45 },
+            aorta: { color: 0xcc2222, emissive: 0x220000, emissiveIntensity: 0.1, roughness: 0.4, metalness: 0.0, clearcoat: 0.5, clearcoatRoughness: 0.2, opacityMult: 0.55 },
+            pulmonary_artery: { color: 0x3355bb, emissive: 0x000822, emissiveIntensity: 0.1, roughness: 0.4, metalness: 0.0, clearcoat: 0.5, clearcoatRoughness: 0.2, opacityMult: 0.55 },
         };
 
-        const c = colors[type] || colors.diseased;
-        const targetOpacity = this.opacity * (c.opacityMult || 1.0);
+        const c = configs[type] || configs.diseased;
+        const targetOpacity = this.opacity * (c.opacityMult ?? 1.0);
 
         return new THREE.MeshPhysicalMaterial({
             color: c.color,
-            emissive: c.emissive,
-            emissiveIntensity: 0.15,
-            metalness: c.metal !== undefined ? c.metal : 0.1,
-            roughness: c.rough !== undefined ? c.rough : 0.55,
-            transmission: c.transmission || 0.0,
-            ior: c.ior || 1.5,
+            emissive: c.emissive ?? 0x000000,
+            emissiveIntensity: c.emissiveIntensity ?? 0.1,
+            metalness: c.metalness ?? 0.0,
+            roughness: c.roughness ?? 0.6,
+            transmission: c.transmission ?? 0.0,
+            ior: c.ior ?? 1.5,
+            clearcoat: c.clearcoat ?? 0.0,
+            clearcoatRoughness: c.clearcoatRoughness ?? 0.5,
+            sheen: c.sheen ?? 0.0,
+            sheenColor: c.sheenColor ? new THREE.Color(c.sheenColor) : new THREE.Color(0xffffff),
+            sheenRoughness: c.sheenRoughness ?? 0.5,
             transparent: true,
             opacity: targetOpacity,
             wireframe: this.wireframe,
             side: THREE.DoubleSide,
-            clearcoat: 0.3,
-            clearcoatRoughness: 0.4,
-            depthWrite: type !== "body" // Don't write depth for the body so internal organs render correctly
+            depthWrite: c.depthWrite !== undefined ? c.depthWrite : (targetOpacity > 0.5),
         });
     }
 
@@ -306,7 +355,16 @@ export class Viewer3D {
             this.diseasedMesh.visible = (m === "diseased" || m === "both");
         }
         if (this.healthyMesh) {
-            this.healthyMesh.visible = (m === "healthy" || m === "both");
+            const showHealthy = (m === "healthy" || m === "both");
+            this.healthyMesh.visible = showHealthy;
+            // In 'both' mode, show healthy as transparent ghost so diseased is clear
+            if (showHealthy) {
+                this.healthyMesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = this._createMaterial(m === "both" ? "healthy_ghost" : "healthy");
+                    }
+                });
+            }
         }
 
         // Context layers
