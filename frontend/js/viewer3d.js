@@ -161,10 +161,14 @@ export class Viewer3D {
                 (gltf) => {
                     const mesh = gltf.scene;
 
-                    // Apply material overrides
+                    // Apply material overrides + force smooth shading
                     mesh.traverse((child) => {
                         if (child.isMesh) {
+                            // CRITICAL: recompute smooth per-vertex normals client-side
+                            // This eliminates the flat-faceted triangulated appearance
+                            child.geometry.computeVertexNormals();
                             child.material = this._createMaterial(type);
+                            child.material.flatShading = false;
                             child.castShadow = true;
                             child.receiveShadow = true;
                         }
