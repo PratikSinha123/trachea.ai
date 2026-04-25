@@ -225,23 +225,22 @@ export class Viewer3D {
     }
 
     _createMaterial(type) {
-        // Real tissue-like materials
+        // Real tissue-like materials — stenosis heatmap for diseased
         const configs = {
-            // Diseased trachea: pinkish-red like inflamed/diseased airway tissue
+            // Diseased trachea: vertex-colored stenosis heatmap (green=normal, red=severe)
+            // Semi-transparent so you can see the HOLLOW airway lumen inside
             diseased: {
-                color: 0xc94040,
-                emissive: 0x3a1010,
-                emissiveIntensity: 0.08,
-                roughness: 0.62,
+                color: 0xffffff,        // vertex colors override this
+                vertexColors: true,     // use per-vertex stenosis colors
+                emissive: 0x0a0000,
+                emissiveIntensity: 0.05,
+                roughness: 0.55,
                 metalness: 0.0,
-                clearcoat: 0.6,         // wet tissue surface
-                clearcoatRoughness: 0.25,
-                sheen: 0.4,
-                sheenColor: 0xe87070,
-                sheenRoughness: 0.5,
-                opacityMult: 1.0,
+                clearcoat: 0.5,
+                clearcoatRoughness: 0.3,
+                opacityMult: 0.72,      // semi-transparent → hollow lumen visible inside
             },
-            // Healthy trachea: warm pink-salmon, slightly lighter
+            // Healthy trachea: warm pink tissue, opaque
             healthy: {
                 color: 0xe87070,
                 emissive: 0x1a0808,
@@ -253,9 +252,9 @@ export class Viewer3D {
                 sheen: 0.5,
                 sheenColor: 0xf0a0a0,
                 sheenRoughness: 0.4,
-                opacityMult: 1.0,
+                opacityMult: 0.78,
             },
-            // 'Both' overlay ghost for healthy — transparent blue-green
+            // Ghost overlay when showing both
             healthy_ghost: {
                 color: 0x34d399,
                 emissive: 0x0a2a1a,
@@ -264,7 +263,7 @@ export class Viewer3D {
                 metalness: 0.0,
                 clearcoat: 0.2,
                 clearcoatRoughness: 0.5,
-                opacityMult: 0.28,
+                opacityMult: 0.22,
             },
             // Context layers
             body: { color: 0xf0e8e0, emissive: 0x000000, emissiveIntensity: 0, roughness: 0.1, metalness: 0.0, transmission: 0.92, ior: 1.3, clearcoat: 0.0, opacityMult: 0.12, depthWrite: false },
@@ -278,6 +277,7 @@ export class Viewer3D {
 
         return new THREE.MeshPhysicalMaterial({
             color: c.color,
+            vertexColors: c.vertexColors === true,
             emissive: c.emissive ?? 0x000000,
             emissiveIntensity: c.emissiveIntensity ?? 0.1,
             metalness: c.metalness ?? 0.0,
@@ -293,7 +293,7 @@ export class Viewer3D {
             opacity: targetOpacity,
             wireframe: this.wireframe,
             side: THREE.DoubleSide,
-            depthWrite: c.depthWrite !== undefined ? c.depthWrite : (targetOpacity > 0.5),
+            depthWrite: c.depthWrite !== undefined ? c.depthWrite : (targetOpacity > 0.6),
         });
     }
 
