@@ -174,6 +174,9 @@ async function loadScan(scanId) {
         updateStats(meta.stats || {});
         updateAnomalies(meta.anomalies || []);
 
+        // Store cross-sections for annotation system
+        window._lastCrossSections = meta.cross_sections || [];
+
         // Load slice viewer
         try {
             const dimRes = await fetch(`${API_BASE}/api/scan/${scanId}/dimensions`);
@@ -184,6 +187,12 @@ async function loadScan(scanId) {
             sliceLabel.textContent = `Slice ${sliceSlider.value} / ${dims.axial}`;
         } catch (e) {
             console.warn("Could not load slice viewer:", e);
+        }
+
+        // Auto-add stenosis annotations if toggle is on
+        const annotToggle = document.getElementById("annotation-toggle");
+        if (viewer3d && annotToggle?.checked && window._lastCrossSections?.length > 0) {
+            viewer3d.addStenosisAnnotations(window._lastCrossSections);
         }
 
     } catch (err) {
@@ -308,6 +317,51 @@ function setupEvents() {
                 viewer3d.setContextVisibility(e.target.dataset.layer, e.target.checked);
             }
         });
+    });
+
+    // Cross-section toggle
+    const crossSectionToggle = document.getElementById("cross-section-toggle");
+    const crossSectionControls = document.getElementById("cross-section-controls");
+    const crossSectionSlider = document.getElementById("cross-section-slider");
+    crossSectionToggle?.addEventListener("change", (e) => {
+        const enabled = e.target.checked;
+        crossSectionControls.style.display = enabled ? "block" : "none";
+        if (viewer3d) viewer3d.setCrossSectionEnabled(enabled);
+    });
+    crossSectionSlider?.addEventListener("input", (e) => {
+        if (viewer3d && viewer3d.crossSectionEnabled) {
+            // Map slider -100..100 to actual mesh coordinates
+            const base = viewer3d.crossSectionPlane.constant;
+            const mesh = viewer3d.diseasedMesh;
+            if (mesh) {
+                const box = new THREE.Box3().setFromObject(mesh);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                const offset = (parseInt(e.target.value) / 100) * size.x * 0.5;
+                viewer3d.crossSectionPlane.constant = center.x + offset;
+            }
+        }
+    });
+
+    // Breathing animation toggle
+    const breathingToggle = document.getElementById("breathing-toggle");
+    breathingToggle?.addEventListener("change", (e) => {
+        if (viewer3d) viewer3d.setBreathingEnabled(e.target.checked);
+    });
+
+    // Stenosis annotation toggle
+    const annotationToggle = document.getElementById("annotation-toggle");
+    annotationToggle?.addEventListener("change", (e) => {
+        if (viewer3d) {
+            if (e.target.checked) {
+                // Re-add annotations from last loaded metadata
+                if (window._lastCrossSections) {
+                    viewer3d.addStenosisAnnotations(window._lastCrossSections);
+                }
+            } else {
+                viewer3d.addStenosisAnnotations([]); // clears all
+            }
+        }
     });
 
     // Morph Controls

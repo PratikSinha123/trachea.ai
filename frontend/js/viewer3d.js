@@ -46,6 +46,11 @@ export class Viewer3D {
         this.wireframe = false;
         this.isAnimating = false;
         this.animationId = null;
+        this.crossSectionEnabled = false;
+        this.crossSectionPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0); // sagittal cut
+        this.annotations = [];
+        this._breathT = 0;
+        this._breathEnabled = true;
 
         this._init();
     }
@@ -58,11 +63,12 @@ export class Viewer3D {
             alpha: true,
         });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        this.renderer.setClearColor(0x0a0d12, 1);
+        this.renderer.setClearColor(0x0a0d14, 1);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.6;
+        this.renderer.toneMappingExposure = 1.5;
+        this.renderer.localClippingEnabled = true; // needed for cross-section
 
         // Scene
         this.scene = new THREE.Scene();
@@ -149,6 +155,15 @@ export class Viewer3D {
     _animate() {
         requestAnimationFrame(() => this._animate());
         this.controls.update();
+
+        // Subtle breathing animation — slow pulsation
+        if (this._breathEnabled && this.diseasedMesh) {
+            this._breathT += 0.012;
+            const scale = 1.0 + 0.012 * Math.sin(this._breathT);
+            this.diseasedMesh.scale.setScalar(scale);
+            if (this.healthyMesh) this.healthyMesh.scale.setScalar(scale);
+        }
+
         this.renderer.render(this.scene, this.camera);
     }
 
@@ -293,6 +308,8 @@ export class Viewer3D {
             opacity: targetOpacity,
             wireframe: this.wireframe,
             side: THREE.DoubleSide,
+            clippingPlanes: this.crossSectionEnabled ? [this.crossSectionPlane] : [],
+            clipShadows: true,
             depthWrite: c.depthWrite !== undefined ? c.depthWrite : (targetOpacity > 0.6),
         });
     }
@@ -333,16 +350,22 @@ export class Viewer3D {
         const size = box.getSize(new THREE.Vector3());
 
         const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim === 0 || isNaN(maxDim)) {
-            return;
-        }
+        if (maxDim === 0 || isNaN(maxDim)) return;
 
         const fov = this.camera.fov * (Math.PI / 180);
-        const dist = maxDim / (2 * Math.tan(fov / 2)) * 1.5;
+        const dist = maxDim / (2 * Math.tan(fov / 2)) * 1.8;
 
-        this.camera.position.set(center.x, center.y, center.z + dist);
+        // Position camera slightly front-right for a clinical 3/4 view
+        this.camera.position.set(
+            center.x + dist * 0.3,
+            center.y + dist * 0.1,
+            center.z + dist * 0.95
+        );
         this.controls.target.copy(center);
         this.controls.update();
+
+        // Set cross-section plane through center of mesh
+        this.crossSectionPlane.constant = center.x;
     }
 
     // ─── Display Controls ──────────────────────────────────────
@@ -413,6 +436,69 @@ export class Viewer3D {
             this.contextVisible[layer] = isVisible;
             this._updateVisibility();
         }
+    }
+
+    setCrossSectionEnabled(enabled) {
+        this.crossSectionEnabled = enabled;
+        // Rebuild materials with/without clipping plane
+        const applyClip = (mesh, type) => {
+            if (!mesh) return;
+            mesh.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = this._createMaterial(type);
+                }
+            });
+        };
+        applyClip(this.diseasedMesh, 'diseased');
+        applyClip(this.healthyMesh, this.displayMode === 'both' ? 'healthy_ghost' : 'healthy');
+    }
+
+    setBreathingEnabled(enabled) {
+        this._breathEnabled = enabled;
+        if (!enabled && this.diseasedMesh) {
+            this.diseasedMesh.scale.setScalar(1.0);
+            if (this.healthyMesh) this.healthyMesh.scale.setScalar(1.0);
+        }
+    }
+
+    addStenosisAnnotations(crossSections) {
+        // Remove existing annotations
+        this.annotations.forEach(a => this.scene.remove(a));
+        this.annotations = [];
+
+        if (!crossSections || crossSections.length === 0) return;
+
+        // Find top 3 worst stenosis points
+        const sorted = [...crossSections]
+            .filter(cs => cs.deviation_pct > 15)
+            .sort((a, b) => b.deviation_pct - a.deviation_pct)
+            .slice(0, 3);
+
+        // We need the mesh bounding box to position annotations
+        if (!this.diseasedMesh) return;
+        const box = new THREE.Box3().setFromObject(this.diseasedMesh);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+
+        sorted.forEach((cs, i) => {
+            // Estimate Y position from z_physical (0 = bottom of trachea)
+            const zRange = crossSections[crossSections.length - 1].z_physical - crossSections[0].z_physical;
+            const zFrac = (cs.z_physical - crossSections[0].z_physical) / Math.max(zRange, 1);
+            const yPos = box.min.y + zFrac * size.y;
+
+            // Glowing ring at the stenosis position
+            const ringGeo = new THREE.TorusGeometry(size.x * 0.6, 0.8, 8, 32);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: cs.deviation_pct > 40 ? 0xff2222 : cs.deviation_pct > 25 ? 0xffaa00 : 0xffff00,
+                transparent: true,
+                opacity: 0.85,
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(center.x, yPos, center.z);
+            ring.rotation.x = Math.PI / 2;
+            this.scene.add(ring);
+            this.annotations.push(ring);
+        });
     }
 
     setOpacity(value) {

@@ -100,6 +100,31 @@
                         </label>
                     </div>
                     <div class="control-group">
+                        <label class="control-label" style="color: #22d3ee; letter-spacing: 0.05em;">✂ Cross Section</label>
+                        <label class="switch">
+                            <input type="checkbox" id="cross-section-toggle">
+                            <span class="switch-slider"></span>
+                        </label>
+                        <div id="cross-section-controls" style="display:none; margin-top: 8px;">
+                            <label class="control-label" style="font-size:11px; margin-bottom:4px;">Slice Position</label>
+                            <input type="range" id="cross-section-slider" class="slider" min="-100" max="100" value="0" step="1">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">🫁 Breathing Anim</label>
+                        <label class="switch">
+                            <input type="checkbox" id="breathing-toggle" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">⚠ Stenosis Markers</label>
+                        <label class="switch">
+                            <input type="checkbox" id="annotation-toggle" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-group">
                         <label class="control-label">Context Layers</label>
                         <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                             <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
@@ -253,7 +278,7 @@
     }
     </script>
     <script type="module" src="js/viewer3d.js"></script>
-    <script type="module" src="js/sliceViewer.js?v=5"></script>
-    <script type="module" src="js/app.js?v=5"></script>
+    <script type="module" src="js/sliceViewer.js?v=6"></script>
+    <script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>
