@@ -47,6 +47,9 @@
                     <button id="btn-process" class="btn btn-accent" title="Process new scan">
                         <span class="btn-icon">⚡</span> Process
                     </button>
+                    <button id="btn-nnunet-predict" class="btn btn-ghost" title="Run nnU-Net AI prediction on a new CT scan" style="border-color:rgba(167,139,250,0.4); color:#a78bfa;">
+                        <span class="btn-icon">🧠</span> AI Predict
+                    </button>
                 </div>
             </div>
             <div class="top-bar-right">
@@ -299,6 +302,54 @@
         </div>
     </div>
 
+    <!-- nnU-Net Predict Modal -->
+    <div id="nnunet-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content" style="width:500px;">
+            <h2 class="modal-title" style="background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">🧠 nnU-Net AI Prediction</h2>
+            <p style="font-size:13px; color:#9ca3af; margin-bottom:18px; line-height:1.5;">
+                Automatically segment the trachea from a raw CT scan using the trained nnU-Net model, then run the full analysis pipeline.
+            </p>
+
+            <div class="form-group">
+                <label class="form-label">CT Scan Path (.nii.gz)</label>
+                <input type="text" id="nnunet-ct-path" class="form-input" placeholder="/path/to/patient_ct.nii.gz">
+                <p style="font-size:11px; color:#6b7280; margin-top:4px;">Full path to the CT NIfTI file on your computer</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Scan ID (name in viewer)</label>
+                <input type="text" id="nnunet-scan-id" class="form-input" placeholder="Patient_001">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Model Fold</label>
+                <select id="nnunet-fold" class="form-input" style="cursor:pointer;">
+                    <option value="0">Fold 0 (default)</option>
+                    <option value="1">Fold 1</option>
+                    <option value="2">Fold 2</option>
+                    <option value="3">Fold 3</option>
+                    <option value="4">Fold 4</option>
+                    <option value="all">All folds (ensemble — most accurate)</option>
+                </select>
+            </div>
+
+            <!-- Status / progress -->
+            <div id="nnunet-status-box" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:8px; background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.25);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="process-spinner" style="border-top-color:#a78bfa;"></div>
+                    <span id="nnunet-status-text" style="font-size:13px; color:#a78bfa;">Starting prediction…</span>
+                </div>
+                <div style="margin-top:8px; background:rgba(255,255,255,0.07); border-radius:4px; height:4px;">
+                    <div id="nnunet-progress-bar" style="height:100%; width:10%; background:linear-gradient(90deg,#a78bfa,#818cf8); border-radius:4px; transition:width 0.5s ease;"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btn-cancel-nnunet" class="btn btn-ghost">Cancel</button>
+                <button id="btn-start-nnunet" class="btn btn-accent" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Run nnU-Net</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="importmap">
     {
@@ -309,7 +360,7 @@
     }
     </script>
     <script type="module" src="js/viewer3d.js"></script>
-    <script type="module" src="js/sliceViewer.js?v=8"></script>
-    <script type="module" src="js/app.js?v=8"></script>
+    <script type="module" src="js/sliceViewer.js?v=9"></script>
+    <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>

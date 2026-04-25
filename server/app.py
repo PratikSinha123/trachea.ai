@@ -246,6 +246,82 @@ async def get_status(scan_id: str):
     return processing_status.get(scan_id, {"status": "unknown"})
 
 
+# ── nnU-Net Prediction endpoints ──────────────────────────────────────────────
+
+class PredictRequest(BaseModel):
+    ct_path: str                        # absolute path to CT .nii.gz on this machine
+    scan_id: str                        # desired scan ID in the web viewer
+    fold: str = "0"                     # which trained fold to use
+    base_dir: str | None = None         # nnunet_workspace base dir (optional)
+
+
+def _run_nnunet_predict(ct_path: str, scan_id: str, fold: str, base_dir: str | None):
+    """Background task: run nnUNetv2_predict and then the analysis pipeline."""
+    import subprocess
+    processing_status[scan_id] = {
+        "status": "predicting",
+        "message": "Running nnU-Net segmentation model…",
+        "progress": 10,
+    }
+    try:
+        # Build the predict.py command
+        cmd = [
+            sys.executable,
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "training", "predict.py"),
+            "--input", ct_path,
+            "--scan-id", scan_id,
+            "--fold", fold,
+            "--processed-data", OUTPUT_ROOT,
+        ]
+        if base_dir:
+            cmd += ["--base-dir", base_dir]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            processing_status[scan_id] = {
+                "status": "error",
+                "message": result.stderr[-1000:] or "predict.py failed",
+            }
+            return
+
+        processing_status[scan_id] = {
+            "status": "done",
+            "scan_id": scan_id,
+            "message": "Prediction complete — scan is ready in the viewer",
+        }
+
+    except Exception as e:
+        processing_status[scan_id] = {"status": "error", "message": str(e)}
+
+
+@app.post("/api/nnunet/predict")
+async def nnunet_predict(req: PredictRequest, background_tasks: BackgroundTasks):
+    """Start nnU-Net inference on a CT file.
+
+    The prediction runs in the background; poll /api/nnunet/status/<scan_id>
+    to check progress, then load the scan from /api/scan/<scan_id>.
+    """
+    if not os.path.isfile(req.ct_path):
+        raise HTTPException(404, f"CT file not found: {req.ct_path}")
+
+    scan_id = req.scan_id.replace(" ", "_")
+    if scan_id in processing_status and processing_status[scan_id].get("status") == "predicting":
+        return {"message": "Already predicting", "scan_id": scan_id}
+
+    processing_status[scan_id] = {"status": "queued", "progress": 0}
+    background_tasks.add_task(
+        _run_nnunet_predict, req.ct_path, scan_id, req.fold, req.base_dir
+    )
+    return {"message": "nnU-Net prediction started", "scan_id": scan_id}
+
+
+@app.get("/api/nnunet/status/{scan_id}")
+async def nnunet_status(scan_id: str):
+    """Poll prediction status for a scan_id."""
+    return processing_status.get(scan_id, {"status": "unknown"})
+
+
 # Serve frontend
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

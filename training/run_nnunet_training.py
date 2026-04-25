@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
-"""Convenient wrapper to launch nnU‑Net training for the Trachea task.
+"""nnU-Net v2 training launcher for the Trachea segmentation task.
 
-Assumes you have already run ``data_preparation/nnunet_dataset.py`` which
-creates ``nnUNet_raw_data/Task001_Trachea``.
+Usage examples
+--------------
+# Full training on college GPU server (fold 0, 500 epochs):
+    python3 training/run_nnunet_training.py --fold 0 --epochs 500
 
-The script will:
-  1. Detect the best device (CUDA > MPS > CPU).
-  2. Set the required environment variables for nnU‑Net.
-  3. Execute the ``nnUNet`` CLI to plan, preprocess and train.
+# Quick sanity check (2 epochs, local Mac):
+    python3 training/run_nnunet_training.py --fold 0 --epochs 2
 
-Usage examples:
-  # Train on the college server (CUDA GPU) – runs full‑resolution 3D U‑Net
-  python3 training/run_nnunet_training.py --fold 0 --epochs 500
+# Plan + preprocess only (no training):
+    python3 training/run_nnunet_training.py --plan-only
 
-  # Quick test on the local M2 Mac (MPS) – 2‑epoch run for sanity check
-  python3 training/run_nnunet_training.py --fold 0 --epochs 2 --device mps
+# Train ALL folds for final deployment model:
+    python3 training/run_nnunet_training.py --fold all --epochs 500
 
-The trained model will be saved under
-``nnUNet_results/Task001_Trachea/nnUNetTrainerV2__nnUNetPlansv2.1/fold_0``.
+After training, run inference with:
+    python3 training/predict.py --input scan.nii.gz --scan-id MyPatient
 """
 
 import argparse
@@ -27,24 +26,24 @@ import sys
 from pathlib import Path
 
 
-def get_best_device(preferred: str = None) -> str:
-    """Return 'cuda', 'mps' or 'cpu' based on availability.
-    If *preferred* is given (e.g. "mps"), it is returned when available.
-    """
-    if preferred:
-        if preferred == "cuda" and torch.cuda.is_available():
-            return "cuda"
-        if (
-            preferred == "mps"
-            and hasattr(torch.backends, "mps")
-            and torch.backends.mps.is_available()
-        ):
-            return "mps"
-        if preferred == "cpu":
-            return "cpu"
-    # auto‑detect
-    import torch
+# ──────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────────────────────────────────────
 
+def detect_device(preferred: str = None) -> str:
+    """Return 'cuda', 'mps' or 'cpu' based on availability."""
+    try:
+        import torch
+    except ImportError:
+        return "cpu"
+
+    if preferred == "cuda" and torch.cuda.is_available():
+        return "cuda"
+    if preferred == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    if preferred == "cpu":
+        return "cpu"
+    # Auto-detect
     if torch.cuda.is_available():
         return "cuda"
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
@@ -52,76 +51,138 @@ def get_best_device(preferred: str = None) -> str:
     return "cpu"
 
 
-def run_cmd(cmd: list[str]):
-    """Run *cmd* via subprocess, streaming output to stdout/stderr."""
-    print("Running:", " ".join(cmd))
-    result = subprocess.run(cmd, check=False)
+def run_cmd(cmd: list[str], env: dict = None):
+    """Stream *cmd* output to stdout; exit on failure."""
+    merged_env = {**os.environ, **(env or {})}
+    print("\n▶", " ".join(cmd))
+    result = subprocess.run(cmd, env=merged_env)
     if result.returncode != 0:
-        sys.exit(f"Command failed with exit code {result.returncode}")
+        sys.exit(f"\n❌ Command failed (exit code {result.returncode})")
 
+
+def ensure_env_vars(base: str) -> dict[str, str]:
+    """Return the 3 required nnU-Net env vars, derived from *base*."""
+    base_path = Path(base).expanduser().resolve()
+    return {
+        "nnUNet_raw":          str(base_path / "nnUNet_raw"),
+        "nnUNet_preprocessed": str(base_path / "nnUNet_preprocessed"),
+        "nnUNet_results":      str(base_path / "nnUNet_results"),
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Main
+# ──────────────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Train nnU‑Net on the Trachea dataset")
-    parser.add_argument(
-        "--fold", type=int, default=0, help="Fold index (0‑4). Use 0 for a quick test."
+    parser = argparse.ArgumentParser(
+        description="nnU-Net v2 training wrapper for Trachea segmentation"
     )
     parser.add_argument(
-        "--epochs", type=int, default=500, help="Number of training epochs."
+        "--fold", default="0",
+        help="Fold to train: 0-4, or 'all' to train all 5 folds (default: 0)"
     )
     parser.add_argument(
-        "--device", choices=["cuda", "mps", "cpu"], help="Force a specific device."
+        "--epochs", type=int, default=500,
+        help="Max training epochs (default: 500). Use 5 for a quick sanity check."
     )
     parser.add_argument(
-        "--plan", action="store_true", help="Only run the planning step and exit."
+        "--device", choices=["cuda", "mps", "cpu"], default=None,
+        help="Force a device (default: auto-detect cuda > mps > cpu)"
     )
     parser.add_argument(
-        "--data-path",
-        type=str,
-        default=None,
-        help="Base directory for nnU-Net raw data (default: $HOME/.nnUNet/nnUNet_raw_data)",
+        "--dataset-id", type=int, default=1,
+        help="nnU-Net dataset ID (default: 1 → Dataset001_Trachea)"
+    )
+    parser.add_argument(
+        "--base-dir", type=str, default=None,
+        help="Base directory for all nnU-Net folders. "
+             "Defaults to $nnUNet_raw parent or ./nnunet_workspace"
+    )
+    parser.add_argument(
+        "--plan-only", action="store_true",
+        help="Only run planning + preprocessing, skip training."
+    )
+    parser.add_argument(
+        "--trainer", type=str, default="nnUNetTrainer",
+        help="Trainer class (default: nnUNetTrainer). "
+             "Use nnUNetTrainer_5epochs for a quick test."
     )
     args = parser.parse_args()
 
-    # Detect device and set nnU‑Net env vars accordingly
-    device = get_best_device(args.device)
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0" if device == "cuda" else ""
-    os.environ["nnUNet_training_env"] = device  # nnU‑Net reads this for MPS support
-    print(f"Detected device: {device}")
-
-    # Set nnU-Net environment variables for data paths
-    if args.data_path:
-        os.environ["nnUNet_raw_data_base"] = args.data_path
-        print(f"Using custom nnU-Net raw data base: {args.data_path}")
+    # Resolve workspace base ──────────────────────────────────────────────────
+    if args.base_dir:
+        base = args.base_dir
+    elif os.environ.get("nnUNet_raw"):
+        # Already configured in env — derive base from nnUNet_raw parent
+        base = str(Path(os.environ["nnUNet_raw"]).parent)
     else:
-        # Use default nnU-Net path if not specified
-        default_nnunet_path = str(Path.home() / ".nnUNet" / "nnUNet_raw_data")
-        os.environ["nnUNet_raw_data_base"] = default_nnunet_path
-        print(f"Using default nnU-Net raw data base: {default_nnunet_path}")
+        base = str(Path.cwd() / "nnunet_workspace")
 
-    task_name = "Task001_Trachea"
-    # 1️⃣ Planning & preprocessing
-    run_cmd(["nnUNet_plan_and_preprocess", "-t", task_name, "-pl3", "d", "-tl", "2"])
+    env_vars = ensure_env_vars(base)
+    # Create directories
+    for p in env_vars.values():
+        Path(p).mkdir(parents=True, exist_ok=True)
 
-    if args.plan:
-        print("Planning completed. Exiting as requested.")
-        return
+    print("=" * 60)
+    print("  nnU-Net v2 — Trachea Segmentation Training")
+    print("=" * 60)
+    for k, v in env_vars.items():
+        print(f"  {k} = {v}")
 
-    # 2️⃣ Training – we use the default trainer (nnUNetTrainerV2)
+    device = detect_device(args.device)
+    print(f"  Device       = {device}")
+    print(f"  Dataset ID   = {args.dataset_id:03d}")
+    print(f"  Fold         = {args.fold}")
+    print(f"  Epochs       = {args.epochs}")
+    print("=" * 60)
+
+    dataset_id_str = str(args.dataset_id)
+
+    # ── Step 1: plan + preprocess ─────────────────────────────────────────────
+    print("\n[1/2] Planning & preprocessing …")
     run_cmd(
-        [
-            "nnUNet_train",
-            "3d_fullres",
-            "-t",
-            task_name,
-            "-f",
-            str(args.fold),
-            "--npz",
-            "--disable_postprocessing_on_folds",
-            f"--max_num_epochs={args.epochs}",
-        ]
+        ["nnUNetv2_plan_and_preprocess", "-d", dataset_id_str,
+         "--verify_dataset_integrity", "-c", "3d_fullres"],
+        env=env_vars
     )
 
-    print("Training finished. Model checkpoints are in nnUNet_results/...")
+    if args.plan_only:
+        print("\n✅ Planning complete. Run without --plan-only to start training.")
+        return
+
+    # ── Step 2: train ─────────────────────────────────────────────────────────
+    if args.fold == "all":
+        folds_to_train = ["0", "1", "2", "3", "4"]
+    else:
+        folds_to_train = [args.fold]
+
+    for fold in folds_to_train:
+        print(f"\n[2/2] Training fold {fold} …")
+        train_cmd = [
+            "nnUNetv2_train",
+            dataset_id_str,
+            "3d_fullres",
+            fold,
+            "-tr", args.trainer,
+            "--npz",                    # save softmax outputs (needed for ensemble)
+        ]
+        if args.epochs != 1000:        # nnUNet default is 1000; override if different
+            train_cmd += ["-num_epochs_per_val", "1"]  # validate every epoch (quick runs)
+
+        # For MPS/CPU — disable AMP (Automatic Mixed Precision, CUDA-only)
+        if device != "cuda":
+            train_cmd.append("--disable_checkpointing")
+            os.environ["nnUNet_compile"] = "F"
+
+        run_cmd(train_cmd, env={**env_vars, "CUDA_VISIBLE_DEVICES": "0" if device == "cuda" else ""})
+
+    print("\n✅ Training complete!")
+    print("   Model saved to:", env_vars["nnUNet_results"])
+    print()
+    print("To predict on a new CT scan, run:")
+    print(f"  python3 training/predict.py --input <ct.nii.gz> --scan-id <PatientID>")
+    print(f"  python3 training/predict.py --input <ct.nii.gz> --scan-id <PatientID> --fold {args.fold}")
 
 
 if __name__ == "__main__":

@@ -559,6 +559,88 @@ function setupEvents() {
             processStatusText.textContent = `❌ Error: ${err.message}`;
         }
     });
+
+    // ─── nnU-Net Predict Modal ───────────────────────────────────
+    const nnunetModal      = document.getElementById("nnunet-modal");
+    const nnunetCtPath     = document.getElementById("nnunet-ct-path");
+    const nnunetScanId     = document.getElementById("nnunet-scan-id");
+    const nnunetFold       = document.getElementById("nnunet-fold");
+    const nnunetStatusBox  = document.getElementById("nnunet-status-box");
+    const nnunetStatusText = document.getElementById("nnunet-status-text");
+    const nnunetProgressBar = document.getElementById("nnunet-progress-bar");
+
+    document.getElementById("btn-nnunet-predict")?.addEventListener("click", () => {
+        nnunetModal.classList.remove("hidden");
+        nnunetStatusBox.style.display = "none";
+    });
+    document.getElementById("btn-cancel-nnunet")?.addEventListener("click", () => {
+        nnunetModal.classList.add("hidden");
+    });
+    nnunetModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => {
+        nnunetModal.classList.add("hidden");
+    });
+
+    document.getElementById("btn-start-nnunet")?.addEventListener("click", async () => {
+        const ctPath = nnunetCtPath?.value.trim();
+        const scanId = nnunetScanId?.value.trim() || `nnunet_${Date.now()}`;
+        const fold   = nnunetFold?.value || "0";
+
+        if (!ctPath) {
+            nnunetStatusBox.style.display = "block";
+            nnunetStatusText.textContent = "⚠️ Please enter the CT scan path.";
+            nnunetProgressBar.style.width = "0%";
+            return;
+        }
+
+        nnunetStatusBox.style.display = "block";
+        nnunetStatusText.textContent = "🧠 Starting nnU-Net prediction…";
+        nnunetProgressBar.style.width = "10%";
+
+        try {
+            const res = await fetch(`${API_BASE}/api/nnunet/predict`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ct_path: ctPath, scan_id: scanId, fold }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                nnunetStatusText.textContent = `❌ ${err.detail || "Server error"}`;
+                return;
+            }
+            const data = await res.json();
+            const sid = data.scan_id;
+
+            // Animate progress bar + poll status every 3s
+            let progress = 15;
+            const poll = setInterval(async () => {
+                try {
+                    const statusRes = await fetch(`${API_BASE}/api/nnunet/status/${sid}`);
+                    const status = await statusRes.json();
+                    if (progress < 90) { progress += 4; }
+                    nnunetProgressBar.style.width = `${progress}%`;
+
+                    if (status.status === "predicting") {
+                        nnunetStatusText.textContent = `🧠 ${status.message || "Running model…"}`;
+                    } else if (status.status === "done") {
+                        clearInterval(poll);
+                        nnunetProgressBar.style.width = "100%";
+                        nnunetStatusText.textContent = "✅ Done! Loading scan into viewer…";
+                        await loadScanList();
+                        scanSelect.value = sid;
+                        await loadScan(sid);
+                        setTimeout(() => nnunetModal.classList.add("hidden"), 1500);
+                    } else if (status.status === "error") {
+                        clearInterval(poll);
+                        nnunetProgressBar.style.width = "0%";
+                        nnunetStatusText.textContent = `❌ Error: ${status.message}`;
+                    }
+                } catch (_) { /* network blip — keep polling */ }
+            }, 3000);
+
+        } catch (err) {
+            nnunetStatusText.textContent = `❌ ${err.message}`;
+        }
+    });
 }
 
 // ─── Start ──────────────────────────────────────────────────
