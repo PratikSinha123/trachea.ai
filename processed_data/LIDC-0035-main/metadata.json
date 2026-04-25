@@ -1,0 +1,889 @@
+{
+  "scan_id": "LIDC-0035-main",
+  "processing_time_s": 113.6,
+  "anomalies": [
+    {
+      "type": "STENOSIS",
+      "z_index": 87,
+      "z_physical": 217.5,
+      "diseased_diameter_mm": 11.4,
+      "expected_diameter_mm": 25.9,
+      "deviation_pct": 55.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 88,
+      "z_physical": 220.0,
+      "diseased_diameter_mm": 11.4,
+      "expected_diameter_mm": 28.5,
+      "deviation_pct": 59.8
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 89,
+      "z_physical": 222.5,
+      "diseased_diameter_mm": 19.5,
+      "expected_diameter_mm": 31.9,
+      "deviation_pct": 38.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 90,
+      "z_physical": 225.0,
+      "diseased_diameter_mm": 23.0,
+      "expected_diameter_mm": 33.9,
+      "deviation_pct": 32.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 91,
+      "z_physical": 227.5,
+      "diseased_diameter_mm": 23.3,
+      "expected_diameter_mm": 34.4,
+      "deviation_pct": 32.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 92,
+      "z_physical": 230.0,
+      "diseased_diameter_mm": 24.7,
+      "expected_diameter_mm": 34.9,
+      "deviation_pct": 29.2
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 93,
+      "z_physical": 232.5,
+      "diseased_diameter_mm": 25.7,
+      "expected_diameter_mm": 35.3,
+      "deviation_pct": 27.4
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 94,
+      "z_physical": 235.0,
+      "diseased_diameter_mm": 25.7,
+      "expected_diameter_mm": 35.3,
+      "deviation_pct": 27.2
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 95,
+      "z_physical": 237.5,
+      "diseased_diameter_mm": 25.1,
+      "expected_diameter_mm": 35.0,
+      "deviation_pct": 28.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 96,
+      "z_physical": 240.0,
+      "diseased_diameter_mm": 24.6,
+      "expected_diameter_mm": 34.6,
+      "deviation_pct": 29.0
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 97,
+      "z_physical": 242.5,
+      "diseased_diameter_mm": 23.0,
+      "expected_diameter_mm": 33.4,
+      "deviation_pct": 31.0
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 98,
+      "z_physical": 245.0,
+      "diseased_diameter_mm": 22.9,
+      "expected_diameter_mm": 31.4,
+      "deviation_pct": 27.2
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 99,
+      "z_physical": 247.5,
+      "diseased_diameter_mm": 21.6,
+      "expected_diameter_mm": 29.4,
+      "deviation_pct": 26.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 100,
+      "z_physical": 250.0,
+      "diseased_diameter_mm": 21.6,
+      "expected_diameter_mm": 28.4,
+      "deviation_pct": 24.0
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 101,
+      "z_physical": 252.5,
+      "diseased_diameter_mm": 21.4,
+      "expected_diameter_mm": 27.8,
+      "deviation_pct": 22.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 102,
+      "z_physical": 255.0,
+      "diseased_diameter_mm": 20.1,
+      "expected_diameter_mm": 26.9,
+      "deviation_pct": 25.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 103,
+      "z_physical": 257.5,
+      "diseased_diameter_mm": 19.4,
+      "expected_diameter_mm": 26.3,
+      "deviation_pct": 26.4
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 104,
+      "z_physical": 260.0,
+      "diseased_diameter_mm": 19.0,
+      "expected_diameter_mm": 25.7,
+      "deviation_pct": 25.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 105,
+      "z_physical": 262.5,
+      "diseased_diameter_mm": 20.2,
+      "expected_diameter_mm": 25.7,
+      "deviation_pct": 21.6
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 106,
+      "z_physical": 265.0,
+      "diseased_diameter_mm": 20.2,
+      "expected_diameter_mm": 26.1,
+      "deviation_pct": 22.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 107,
+      "z_physical": 267.5,
+      "diseased_diameter_mm": 20.8,
+      "expected_diameter_mm": 26.7,
+      "deviation_pct": 21.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 108,
+      "z_physical": 270.0,
+      "diseased_diameter_mm": 21.0,
+      "expected_diameter_mm": 27.3,
+      "deviation_pct": 22.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 109,
+      "z_physical": 272.5,
+      "diseased_diameter_mm": 21.2,
+      "expected_diameter_mm": 27.6,
+      "deviation_pct": 23.4
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 110,
+      "z_physical": 275.0,
+      "diseased_diameter_mm": 20.9,
+      "expected_diameter_mm": 27.8,
+      "deviation_pct": 24.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 111,
+      "z_physical": 277.5,
+      "diseased_diameter_mm": 21.7,
+      "expected_diameter_mm": 28.0,
+      "deviation_pct": 22.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 112,
+      "z_physical": 280.0,
+      "diseased_diameter_mm": 21.7,
+      "expected_diameter_mm": 28.2,
+      "deviation_pct": 23.2
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 113,
+      "z_physical": 282.5,
+      "diseased_diameter_mm": 21.6,
+      "expected_diameter_mm": 28.6,
+      "deviation_pct": 24.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 114,
+      "z_physical": 285.0,
+      "diseased_diameter_mm": 21.8,
+      "expected_diameter_mm": 29.1,
+      "deviation_pct": 24.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 115,
+      "z_physical": 287.5,
+      "diseased_diameter_mm": 21.9,
+      "expected_diameter_mm": 29.2,
+      "deviation_pct": 25.0
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 116,
+      "z_physical": 290.0,
+      "diseased_diameter_mm": 22.3,
+      "expected_diameter_mm": 29.1,
+      "deviation_pct": 23.6
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 117,
+      "z_physical": 292.5,
+      "diseased_diameter_mm": 21.8,
+      "expected_diameter_mm": 28.6,
+      "deviation_pct": 23.9
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 118,
+      "z_physical": 295.0,
+      "diseased_diameter_mm": 21.8,
+      "expected_diameter_mm": 28.8,
+      "deviation_pct": 24.3
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 119,
+      "z_physical": 297.5,
+      "diseased_diameter_mm": 21.9,
+      "expected_diameter_mm": 29.0,
+      "deviation_pct": 24.6
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 120,
+      "z_physical": 300.0,
+      "diseased_diameter_mm": 22.5,
+      "expected_diameter_mm": 28.9,
+      "deviation_pct": 22.1
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 121,
+      "z_physical": 302.5,
+      "diseased_diameter_mm": 21.8,
+      "expected_diameter_mm": 28.7,
+      "deviation_pct": 24.0
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 122,
+      "z_physical": 305.0,
+      "diseased_diameter_mm": 21.5,
+      "expected_diameter_mm": 28.4,
+      "deviation_pct": 24.1
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 123,
+      "z_physical": 307.5,
+      "diseased_diameter_mm": 21.0,
+      "expected_diameter_mm": 28.1,
+      "deviation_pct": 25.2
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 124,
+      "z_physical": 310.0,
+      "diseased_diameter_mm": 21.0,
+      "expected_diameter_mm": 27.4,
+      "deviation_pct": 23.4
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 125,
+      "z_physical": 312.5,
+      "diseased_diameter_mm": 20.0,
+      "expected_diameter_mm": 26.9,
+      "deviation_pct": 25.7
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 126,
+      "z_physical": 315.0,
+      "diseased_diameter_mm": 19.0,
+      "expected_diameter_mm": 25.9,
+      "deviation_pct": 26.4
+    },
+    {
+      "type": "STENOSIS",
+      "z_index": 127,
+      "z_physical": 317.5,
+      "diseased_diameter_mm": 16.9,
+      "expected_diameter_mm": 25.3,
+      "deviation_pct": 33.1
+    }
+  ],
+  "stats": {
+    "volume_diseased_cm3": 36.69,
+    "volume_healthy_cm3": 73.44,
+    "avg_diameter_diseased_mm": 21.2,
+    "avg_diameter_healthy_mm": 29.2,
+    "min_diameter_mm": 11.4,
+    "max_stenosis_pct": 59.8,
+    "anomalies_found": 41
+  },
+  "centerline": [
+    [
+      172.81218905472636,
+      188.41169154228857,
+      1.5
+    ],
+    [
+      172.46679389312976,
+      188.32213740458016,
+      2.25
+    ],
+    [
+      172.06357758620692,
+      188.20366379310343,
+      3.0
+    ],
+    [
+      171.84037396121883,
+      187.87915512465372,
+      3.75
+    ],
+    [
+      171.76634877384197,
+      187.71968664850135,
+      4.5
+    ],
+    [
+      171.5554435483871,
+      187.65927419354838,
+      5.25
+    ],
+    [
+      171.29842931937173,
+      187.58344240837698,
+      6.0
+    ],
+    [
+      171.17084942084944,
+      187.56177606177607,
+      6.75
+    ],
+    [
+      171.00768245838668,
+      187.54225352112678,
+      7.5
+    ],
+    [
+      171.05322580645162,
+      187.44096774193548,
+      8.25
+    ],
+    [
+      171.29464285714286,
+      187.42857142857142,
+      9.0
+    ],
+    [
+      171.30947580645162,
+      187.49193548387098,
+      9.75
+    ],
+    [
+      171.4056338028169,
+      187.42922535211267,
+      10.5
+    ],
+    [
+      171.52773556231003,
+      187.34384498480244,
+      11.25
+    ],
+    [
+      171.50357142857143,
+      187.03526785714286,
+      12.0
+    ],
+    [
+      170.51618303571428,
+      186.82533482142856,
+      12.75
+    ],
+    [
+      170.267578125,
+      186.26171875,
+      13.5
+    ],
+    [
+      170.85048231511254,
+      186.13745980707395,
+      14.25
+    ],
+    [
+      172.02083333333334,
+      185.81666666666666,
+      15.0
+    ],
+    [
+      173.01201923076923,
+      186.1658653846154,
+      15.75
+    ],
+    [
+      177.375,
+      189.75,
+      16.5
+    ]
+  ],
+  "cross_sections": [
+    {
+      "z_index": 87,
+      "z_physical": 217.5,
+      "centroid_x": 199.1535300678677,
+      "centroid_y": 243.241280175502,
+      "area_mm2": 102.95550774786375,
+      "equiv_diameter_mm": 11.449324164022414,
+      "healthy_diameter_mm": 25.867809454977372,
+      "deviation_pct": 55.73910429505122
+    },
+    {
+      "z_index": 88,
+      "z_physical": 220.0,
+      "centroid_x": 199.1535300678677,
+      "centroid_y": 243.241280175502,
+      "area_mm2": 102.95550774786375,
+      "equiv_diameter_mm": 11.449324164022414,
+      "healthy_diameter_mm": 28.49956983674891,
+      "deviation_pct": 59.82632639858646
+    },
+    {
+      "z_index": 89,
+      "z_physical": 222.5,
+      "centroid_x": 202.73478265728116,
+      "centroid_y": 240.09944353296083,
+      "area_mm2": 300.11866964409955,
+      "equiv_diameter_mm": 19.547965579675445,
+      "healthy_diameter_mm": 31.90379577573667,
+      "deviation_pct": 38.72840173286849
+    },
+    {
+      "z_index": 90,
+      "z_physical": 225.0,
+      "centroid_x": 200.82305399576822,
+      "centroid_y": 239.35504379272464,
+      "area_mm2": 413.84076643749154,
+      "equiv_diameter_mm": 22.954703854585503,
+      "healthy_diameter_mm": 33.92127303890017,
+      "deviation_pct": 32.32947410829318
+    },
+    {
+      "z_index": 91,
+      "z_physical": 227.5,
+      "centroid_x": 197.4923802788802,
+      "centroid_y": 240.36821657616323,
+      "area_mm2": 427.29900274440183,
+      "equiv_diameter_mm": 23.324964902869013,
+      "healthy_diameter_mm": 34.435166034879664,
+      "deviation_pct": 32.26411372826556
+    },
+    {
+      "z_index": 92,
+      "z_physical": 230.0,
+      "centroid_x": 194.30795411581406,
+      "centroid_y": 240.86757417207355,
+      "area_mm2": 479.11321252600646,
+      "equiv_diameter_mm": 24.698702164146475,
+      "healthy_diameter_mm": 34.904701994424656,
+      "deviation_pct": 29.23961313839147
+    },
+    {
+      "z_index": 93,
+      "z_physical": 232.5,
+      "centroid_x": 193.84998497366905,
+      "centroid_y": 240.4112372050683,
+      "area_mm2": 516.7962741853553,
+      "equiv_diameter_mm": 25.65161696393797,
+      "healthy_diameter_mm": 35.331649395254715,
+      "deviation_pct": 27.3976239349212
+    },
+    {
+      "z_index": 94,
+      "z_physical": 235.0,
+      "centroid_x": 193.84998497366905,
+      "centroid_y": 240.4112372050683,
+      "area_mm2": 516.7962741853553,
+      "equiv_diameter_mm": 25.65161696393797,
+      "healthy_diameter_mm": 35.2588255815292,
+      "deviation_pct": 27.247670502741013
+    },
+    {
+      "z_index": 95,
+      "z_physical": 237.5,
+      "centroid_x": 194.36045087938723,
+      "centroid_y": 238.688507652801,
+      "area_mm2": 495.2630960942988,
+      "equiv_diameter_mm": 25.111522434835212,
+      "healthy_diameter_mm": 35.02721799763388,
+      "deviation_pct": 28.308544411001996
+    },
+    {
+      "z_index": 96,
+      "z_physical": 240.0,
+      "centroid_x": 196.01262576200745,
+      "centroid_y": 236.2685061259703,
+      "area_mm2": 473.72991800324235,
+      "equiv_diameter_mm": 24.559553439056547,
+      "healthy_diameter_mm": 34.571740151709484,
+      "deviation_pct": 28.960609644515856
+    },
+    {
+      "z_index": 97,
+      "z_physical": 242.5,
+      "centroid_x": 196.29311338110386,
+      "centroid_y": 234.76031385985638,
+      "area_mm2": 416.5324136988736,
+      "equiv_diameter_mm": 23.02923230994451,
+      "healthy_diameter_mm": 33.386645404653684,
+      "deviation_pct": 31.022622875628826
+    },
+    {
+      "z_index": 98,
+      "z_physical": 245.0,
+      "centroid_x": 196.12584654776776,
+      "centroid_y": 234.22194376773518,
+      "area_mm2": 410.47620736076396,
+      "equiv_diameter_mm": 22.86120161725178,
+      "healthy_diameter_mm": 31.403047644511634,
+      "deviation_pct": 27.20069123212227
+    },
+    {
+      "z_index": 99,
+      "z_physical": 247.5,
+      "centroid_x": 195.47899548651762,
+      "centroid_y": 233.1317705607546,
+      "area_mm2": 365.3911157326145,
+      "equiv_diameter_mm": 21.569200677022483,
+      "healthy_diameter_mm": 29.431318194824826,
+      "deviation_pct": 26.713439968124874
+    },
+    {
+      "z_index": 100,
+      "z_physical": 250.0,
+      "centroid_x": 195.47899548651762,
+      "centroid_y": 233.1317705607546,
+      "area_mm2": 365.3911157326145,
+      "equiv_diameter_mm": 21.569200677022483,
+      "healthy_diameter_mm": 28.39415495037326,
+      "deviation_pct": 24.03647611728293
+    },
+    {
+      "z_index": 101,
+      "z_physical": 252.5,
+      "centroid_x": 194.27748636798324,
+      "centroid_y": 232.08237093453093,
+      "area_mm2": 360.00782120985036,
+      "equiv_diameter_mm": 21.40972195938863,
+      "healthy_diameter_mm": 27.768689923647667,
+      "deviation_pct": 22.899776625197482
+    },
+    {
+      "z_index": 102,
+      "z_physical": 255.0,
+      "centroid_x": 193.010692326566,
+      "centroid_y": 230.67348625812122,
+      "area_mm2": 316.2685532123919,
+      "equiv_diameter_mm": 20.067028397503066,
+      "healthy_diameter_mm": 26.859021202148828,
+      "deviation_pct": 25.287566339544703
+    },
+    {
+      "z_index": 103,
+      "z_physical": 257.5,
+      "centroid_x": 192.64971678224327,
+      "centroid_y": 229.8278308731236,
+      "area_mm2": 294.73537512133544,
+      "equiv_diameter_mm": 19.371854192018805,
+      "healthy_diameter_mm": 26.31114916154913,
+      "deviation_pct": 26.37397145568749
+    },
+    {
+      "z_index": 104,
+      "z_physical": 260.0,
+      "centroid_x": 192.34956236021213,
+      "centroid_y": 229.56879057703424,
+      "area_mm2": 283.9687860758072,
+      "equiv_diameter_mm": 19.014738701916407,
+      "healthy_diameter_mm": 25.668311802648955,
+      "deviation_pct": 25.921350620518417
+    },
+    {
+      "z_index": 105,
+      "z_physical": 262.5,
+      "centroid_x": 192.53450042386598,
+      "centroid_y": 229.66140724435638,
+      "area_mm2": 318.96020047377397,
+      "equiv_diameter_mm": 20.152239092464743,
+      "healthy_diameter_mm": 25.70166894707117,
+      "deviation_pct": 21.591710118259893
+    },
+    {
+      "z_index": 106,
+      "z_physical": 265.0,
+      "centroid_x": 192.53450042386598,
+      "centroid_y": 229.66140724435638,
+      "area_mm2": 318.96020047377397,
+      "equiv_diameter_mm": 20.152239092464743,
+      "healthy_diameter_mm": 26.082210012448012,
+      "deviation_pct": 22.73569194156909
+    },
+    {
+      "z_index": 107,
+      "z_physical": 267.5,
+      "centroid_x": 193.27264580519304,
+      "centroid_y": 230.0424027169646,
+      "area_mm2": 340.49337856483044,
+      "equiv_diameter_mm": 20.821374457735065,
+      "healthy_diameter_mm": 26.666939920742145,
+      "deviation_pct": 21.920645864808314
+    },
+    {
+      "z_index": 108,
+      "z_physical": 270.0,
+      "centroid_x": 193.73699296562418,
+      "centroid_y": 229.82116495150964,
+      "area_mm2": 346.54958490294007,
+      "equiv_diameter_mm": 21.005728640301413,
+      "healthy_diameter_mm": 27.25484302418409,
+      "deviation_pct": 22.92845487437825
+    },
+    {
+      "z_index": 109,
+      "z_physical": 272.5,
+      "centroid_x": 194.10809701441806,
+      "centroid_y": 229.19486557685167,
+      "area_mm2": 351.9328794257042,
+      "equiv_diameter_mm": 21.168251207346312,
+      "healthy_diameter_mm": 27.644998039579455,
+      "deviation_pct": 23.428277415539544
+    },
+    {
+      "z_index": 110,
+      "z_physical": 275.0,
+      "centroid_x": 195.86725819204736,
+      "centroid_y": 229.0543698063047,
+      "area_mm2": 341.83920219552147,
+      "equiv_diameter_mm": 20.862482838244755,
+      "healthy_diameter_mm": 27.768689923647667,
+      "deviation_pct": 24.870482202769036
+    },
+    {
+      "z_index": 111,
+      "z_physical": 277.5,
+      "centroid_x": 197.38084443468247,
+      "centroid_y": 228.56467667287282,
+      "area_mm2": 368.75567480934205,
+      "equiv_diameter_mm": 21.668278831341322,
+      "healthy_diameter_mm": 28.02972288382081,
+      "deviation_pct": 22.69535121287771
+    },
+    {
+      "z_index": 112,
+      "z_physical": 280.0,
+      "centroid_x": 197.38084443468247,
+      "centroid_y": 228.56467667287282,
+      "area_mm2": 368.75567480934205,
+      "equiv_diameter_mm": 21.668278831341322,
+      "healthy_diameter_mm": 28.22770763059258,
+      "deviation_pct": 23.23755398451942
+    },
+    {
+      "z_index": 113,
+      "z_physical": 282.5,
+      "centroid_x": 198.07910960771048,
+      "centroid_y": 228.43065446473562,
+      "area_mm2": 368.08276299399654,
+      "equiv_diameter_mm": 21.64849947639182,
+      "healthy_diameter_mm": 28.589616095362896,
+      "deviation_pct": 24.278453393072645
+    },
+    {
+      "z_index": 114,
+      "z_physical": 285.0,
+      "centroid_x": 200.24038191357175,
+      "centroid_y": 227.73635410618138,
+      "area_mm2": 373.46605751676066,
+      "equiv_diameter_mm": 21.806231977273754,
+      "healthy_diameter_mm": 29.05040902321641,
+      "deviation_pct": 24.93657504151931
+    },
+    {
+      "z_index": 115,
+      "z_physical": 287.5,
+      "centroid_x": 201.43805494957925,
+      "centroid_y": 226.8309753368405,
+      "area_mm2": 375.4847929627972,
+      "equiv_diameter_mm": 21.865088310979417,
+      "healthy_diameter_mm": 29.153451081305892,
+      "deviation_pct": 25.00000000000001
+    },
+    {
+      "z_index": 116,
+      "z_physical": 290.0,
+      "centroid_x": 202.01247989100156,
+      "centroid_y": 226.20033077467681,
+      "area_mm2": 388.9430292697075,
+      "equiv_diameter_mm": 22.253486142968196,
+      "healthy_diameter_mm": 29.124047694015005,
+      "deviation_pct": 23.59068225416589
+    },
+    {
+      "z_index": 117,
+      "z_physical": 292.5,
+      "centroid_x": 202.88063567812262,
+      "centroid_y": 224.2783415386393,
+      "area_mm2": 372.79314570141514,
+      "equiv_diameter_mm": 21.78657786604539,
+      "healthy_diameter_mm": 28.634533037583925,
+      "deviation_pct": 23.915023033727596
+    },
+    {
+      "z_index": 118,
+      "z_physical": 295.0,
+      "centroid_x": 202.88063567812262,
+      "centroid_y": 224.2783415386393,
+      "area_mm2": 372.79314570141514,
+      "equiv_diameter_mm": 21.78657786604539,
+      "healthy_diameter_mm": 28.768863093303533,
+      "deviation_pct": 24.270285567466146
+    },
+    {
+      "z_index": 119,
+      "z_physical": 297.5,
+      "centroid_x": 204.11068444440016,
+      "centroid_y": 223.27628990313485,
+      "area_mm2": 375.4847929627972,
+      "equiv_diameter_mm": 21.865088310979417,
+      "healthy_diameter_mm": 29.00613608559267,
+      "deviation_pct": 24.619093537798737
+    },
+    {
+      "z_index": 120,
+      "z_physical": 300.0,
+      "centroid_x": 204.19373723692811,
+      "centroid_y": 222.06958754507164,
+      "area_mm2": 397.01797105385367,
+      "equiv_diameter_mm": 22.483304488359504,
+      "healthy_diameter_mm": 28.872909954058393,
+      "deviation_pct": 22.13010561064269
+    },
+    {
+      "z_index": 121,
+      "z_physical": 302.5,
+      "centroid_x": 204.33280312693952,
+      "centroid_y": 220.73904359019636,
+      "area_mm2": 374.8118811474517,
+      "equiv_diameter_mm": 21.84548715212163,
+      "healthy_diameter_mm": 28.73906623073212,
+      "deviation_pct": 23.986788656476392
+    },
+    {
+      "z_index": 122,
+      "z_physical": 305.0,
+      "centroid_x": 203.9832455675615,
+      "centroid_y": 219.61314637118917,
+      "area_mm2": 364.04529210192345,
+      "equiv_diameter_mm": 21.529441747960682,
+      "healthy_diameter_mm": 28.363964452787123,
+      "deviation_pct": 24.095794916831032
+    },
+    {
+      "z_index": 123,
+      "z_physical": 307.5,
+      "centroid_x": 203.71826679511756,
+      "centroid_y": 216.82570385005224,
+      "area_mm2": 345.87667308759455,
+      "equiv_diameter_mm": 20.98532481941992,
+      "healthy_diameter_mm": 28.06027299957402,
+      "deviation_pct": 25.21339753273785
+    },
+    {
+      "z_index": 124,
+      "z_physical": 310.0,
+      "centroid_x": 203.71826679511756,
+      "centroid_y": 216.82570385005224,
+      "area_mm2": 345.87667308759455,
+      "equiv_diameter_mm": 20.98532481941992,
+      "healthy_diameter_mm": 27.39593892666709,
+      "deviation_pct": 23.399870047918327
+    },
+    {
+      "z_index": 125,
+      "z_physical": 312.5,
+      "centroid_x": 203.49019153128367,
+      "centroid_y": 215.26501368350736,
+      "area_mm2": 313.57690595100985,
+      "equiv_diameter_mm": 19.981454325762293,
+      "healthy_diameter_mm": 26.906827270002175,
+      "deviation_pct": 25.7383483929405
+    },
+    {
+      "z_index": 126,
+      "z_physical": 315.0,
+      "centroid_x": 203.5462383161789,
+      "centroid_y": 214.39884975058206,
+      "area_mm2": 283.9687860758072,
+      "equiv_diameter_mm": 19.014738701916407,
+      "healthy_diameter_mm": 25.851243452986925,
+      "deviation_pct": 26.445554789282717
+    },
+    {
+      "z_index": 127,
+      "z_physical": 317.5,
+      "centroid_x": 202.31743479060555,
+      "centroid_y": 211.92294473847943,
+      "area_mm2": 224.7525463254019,
+      "equiv_diameter_mm": 16.91637756026459,
+      "healthy_diameter_mm": 25.298480512924563,
+      "deviation_pct": 33.13283162748727
+    }
+  ],
+  "meshes": {
+    "diseased": "meshes/diseased.glb",
+    "healthy": "meshes/healthy.glb",
+    "morph_frames": [
+      "meshes/morph/morph_000.glb",
+      "meshes/morph/morph_001.glb",
+      "meshes/morph/morph_002.glb",
+      "meshes/morph/morph_003.glb",
+      "meshes/morph/morph_004.glb",
+      "meshes/morph/morph_005.glb",
+      "meshes/morph/morph_006.glb",
+      "meshes/morph/morph_007.glb",
+      "meshes/morph/morph_008.glb",
+      "meshes/morph/morph_009.glb",
+      "meshes/morph/morph_010.glb",
+      "meshes/morph/morph_011.glb",
+      "meshes/morph/morph_012.glb",
+      "meshes/morph/morph_013.glb",
+      "meshes/morph/morph_014.glb",
+      "meshes/morph/morph_015.glb",
+      "meshes/morph/morph_016.glb",
+      "meshes/morph/morph_017.glb",
+      "meshes/morph/morph_018.glb",
+      "meshes/morph/morph_019.glb",
+      "meshes/morph/morph_020.glb"
+    ]
+  }
+}
