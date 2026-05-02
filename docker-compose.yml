@@ -1,0 +1,19 @@
+services:
+  trachea-backend:
+    build:
+      context: .
+    image: trachea-ai-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      TRACHEA_OUTPUT: /app/processed_data
+    volumes:
+      - ./processed_data:/app/processed_data
+      - ./input_data:/data:ro
+      - ./nnunet_workspace:/app/nnunet_workspace
+      - trachea_model_cache:/home/appuser
+    restart: unless-stopped
+
+volumes:
+  trachea_model_cache:

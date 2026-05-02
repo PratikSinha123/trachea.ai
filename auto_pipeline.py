@@ -5,7 +5,7 @@ from pathlib import Path
 import SimpleITK as sitk
 
 
-DEFAULT_INPUT_ROOT = Path("/Volumes/Untitled/sample/LIDC-IDRI-0035")
+DEFAULT_INPUT_ROOT = Path("/Volumes/Untitled/TCIA_LIDC-IDRI_20200921/lidc_idri")
 DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parent / "processed_data"
 
 
@@ -233,8 +233,32 @@ def main():
         if args.process_nifti:
             pipeline.process_nifti(args.process_nifti, args.scan_id)
         elif args.input_root:
-            # Process DICOM folder with AI pipeline
-            pipeline.process_dicom(args.input_root, args.scan_id)
+            # Check if the root itself is a DICOM series
+            direct_series = sitk.ImageSeriesReader.GetGDCMSeriesIDs(args.input_root) or []
+            if direct_series:
+                # Root folder is itself a DICOM series
+                scan_id = args.scan_id or os.path.basename(args.input_root)
+                pipeline.process_dicom(args.input_root, scan_id)
+            else:
+                # Recursively discover nested DICOM series directories
+                series_dirs = discover_series_directories(args.input_root)
+                if not series_dirs:
+                    print(f"❌ No DICOM series found in {args.input_root}")
+                    print("   Make sure your SSD is mounted and the path is correct.")
+                    raise SystemExit(1)
+
+                print(f"\n🔍 Found {len(series_dirs)} DICOM series under {args.input_root}")
+                success_count = 0
+                for i, series_dir in enumerate(series_dirs, 1):
+                    scan_id = build_scan_id(series_dir, args.input_root, args.scan_id or "single_scan")
+                    print(f"\n[{i}/{len(series_dirs)}] Processing: {scan_id}")
+                    try:
+                        pipeline.process_dicom(series_dir, scan_id)
+                        success_count += 1
+                    except Exception as exc:
+                        print(f"  ❌ Failed: {exc}")
+
+                print(f"\n✅ AI pipeline complete: {success_count}/{len(series_dirs)} scans processed")
         else:
             parser.error("Provide an input path or --process-nifti for AI mode.")
 

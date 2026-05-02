@@ -1,0 +1,34 @@
+# Exclude heavy local-only files from Vercel deployment
+processed_data/
+input_data/
+nnunet_workspace/
+nnUNet_raw_data/
+nnUNet_results/
+nnUNet_predictions/
+training/
+*.nii
+*.nii.gz
+
+# Local pipeline scripts (not needed on Vercel)
+auto_pipeline.py
+auto_train.py
+export_for_vercel.py
+inspect_model.py
+Dockerfile
+docker-compose.yml
+requirements-local.txt
+
+# Python modules only needed locally
+segmentation/
+reconstruction/
+visualization/
+server/
+
+# Dev files
+__pycache__/
+*.pyc
+.git/
+.DS_Store
+.ruff_cache/
+.vscode/
+.kilo/

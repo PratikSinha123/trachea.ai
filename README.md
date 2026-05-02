@@ -83,6 +83,85 @@ Open **`http://localhost:8000`** in your browser.
 
 ---
 
+## 🌐 Deployment
+
+This project should be deployed as two pieces:
+
+1. **Frontend on Vercel**: Vercel serves the static viewer from `frontend/` plus a tiny `/api/config` endpoint.
+2. **AI backend on a Python/container host**: run the FastAPI app on a machine/container that can install PyTorch, SimpleITK, and TotalSegmentator.
+
+### Backend with Docker
+
+Build the backend image:
+```bash
+docker build -t trachea-ai-backend .
+```
+
+If you are building on Apple Silicon for a typical cloud Linux server, build for `linux/amd64`:
+```bash
+docker build --platform linux/amd64 -t trachea-ai-backend .
+```
+
+Run it locally:
+```bash
+docker run --rm -p 8000:8000 \
+  -e TRACHEA_OUTPUT=/app/processed_data \
+  -v "$PWD/processed_data:/app/processed_data" \
+  -v "$PWD/input_data:/data:ro" \
+  -v "$PWD/nnunet_workspace:/app/nnunet_workspace" \
+  -v trachea_model_cache:/home/appuser \
+  trachea-ai-backend
+```
+
+The backend will be available at:
+```bash
+http://localhost:8000/api/scans
+```
+
+If Docker Compose is installed, you can also use:
+```bash
+docker compose up --build
+```
+
+To process local scans through the Docker backend, put files in `input_data/` and use container paths in the app, for example:
+```bash
+/data/patient_ct.nii.gz
+```
+
+For a cloud server, push the image to a registry and run it on the server:
+```bash
+docker build -t your-registry/trachea-ai-backend:latest .
+docker push your-registry/trachea-ai-backend:latest
+
+docker run -d --name trachea-ai-backend \
+  --restart unless-stopped \
+  -p 8000:8000 \
+  -e TRACHEA_OUTPUT=/app/processed_data \
+  -v trachea_processed:/app/processed_data \
+  -v trachea_model_cache:/home/appuser \
+  your-registry/trachea-ai-backend:latest
+```
+
+Put HTTPS in front of the backend before connecting it to the Vercel frontend. A Vercel page is served over HTTPS, so browser requests to a plain `http://` backend may be blocked as mixed content.
+
+Use persistent storage for both `/app/processed_data` and `/home/appuser` on the backend host. The first stores generated scan outputs; the second lets model downloads and caches survive container restarts.
+
+Non-Docker backend start command:
+```bash
+uvicorn server.app:app --host 0.0.0.0 --port $PORT
+```
+
+After the backend is live, set this Vercel environment variable:
+```bash
+TRACHEA_API_BASE_URL=https://your-backend-domain.example.com
+```
+
+Then redeploy Vercel. The browser app will call the external backend for `/api/scans`, meshes, slices, and AI processing.
+
+Do not deploy patient scans, generated NIfTI files, GLB outputs, or training workspaces to Vercel. They are ignored by `.vercelignore` and should live on the backend host or object storage.
+
+---
+
 ## 🧠 Training the Deep Learning Model (nnU-Net)
 
 TracheaAI is set up to transition from its hybrid segmentor to a state-of-the-art **nnU-Net** deep learning model.

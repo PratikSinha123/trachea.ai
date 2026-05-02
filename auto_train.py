@@ -2,6 +2,11 @@
 """
 auto_train.py — One-click nnU-Net training from your raw dataset folder.
 
+⚡ LOCAL SSD MICRO-BATCH MODE (default):
+  Trains on 3 patients at a time with 2-min cooldowns between batches.
+  Perfect for local Mac / SSD training when server is unavailable.
+  The model checkpoint chains across batches so learning accumulates.
+
 Give it the path to your database folder and it will:
   1. Scan for up to N patient CT scans (DICOM dirs or NIfTI files)
   2. Auto-generate trachea masks using TotalSegmentator AI
@@ -142,19 +147,51 @@ def run_totalsegmentator(ct_gz: str, out_dir: str, device: str = "cpu") -> str |
     """
     Run TotalSegmentator to extract the trachea mask.
     Returns path to trachea.nii.gz or None on failure.
+    
+    NOTE: Forces CPU mode and minimal threading to prevent macOS OOM kills.
     """
     os.makedirs(out_dir, exist_ok=True)
+    
+    # Try to find the TotalSegmentator executable
+    import shutil
+    ts_cli = shutil.which("TotalSegmentator")
+    if not ts_cli:
+        # Fallback to local python bin path
+        local_bin = Path(sys.executable).parent / "TotalSegmentator"
+        user_bin = Path.home() / f".local/bin/TotalSegmentator"
+        mac_user_bin = Path.home() / f"Library/Python/{sys.version_info.major}.{sys.version_info.minor}/bin/TotalSegmentator"
+        
+        if local_bin.exists(): ts_cli = str(local_bin)
+        elif user_bin.exists(): ts_cli = str(user_bin)
+        elif mac_user_bin.exists(): ts_cli = str(mac_user_bin)
+        else:
+            ts_cli = "TotalSegmentator" # Let it fail with a clear message
+
     cmd = [
-        sys.executable, "-m", "totalsegmentator",
+        ts_cli,
         "-i", ct_gz,
         "-o", out_dir,
         "--roi_subset", "trachea",
-        "--ml",          # use fast mode
+        "--ml",              # multilabel output
+        "--fast",            # USE FAST 3MM MODEL (Crucial for memory/speed on Mac)
+        "--force_split",     # Process large CTs in smaller chunks to save RAM
+        "--nr_thr_resamp", "1",  # Single thread for resampling
+        "--nr_thr_saving", "1",  # Single thread for saving
+        "--device", "cpu",       # FORCE CPU — MPS/GPU doubles memory usage
     ]
-    if device == "cuda":
-        cmd += ["--device", "cuda"]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Env vars to minimize memory: single-thread everything
+    ts_env = {
+        **os.environ,
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "nnUNet_n_proc_DA": "0",       # No background data augmentation workers
+        "nnUNet_compile": "F",          # Don't compile models (saves RAM)
+        "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",  # Don't cache MPS memory
+    }
+
+    result = subprocess.run(cmd, capture_output=True, text=True, env=ts_env)
     trachea_out = os.path.join(out_dir, "trachea.nii.gz")
     if os.path.isfile(trachea_out):
         return trachea_out
@@ -162,8 +199,9 @@ def run_totalsegmentator(ct_gz: str, out_dir: str, device: str = "cpu") -> str |
     for candidate in Path(out_dir).glob("*.nii.gz"):
         if "trachea" in candidate.name.lower():
             return str(candidate)
-    warn(f"TotalSegmentator stderr: {result.stderr[-300:]}")
+    warn(f"TotalSegmentator failed. stderr: {result.stderr[-300:] if result.stderr else 'No output'}")
     return None
+
 
 
 # ─── nnU-Net dataset prep ─────────────────────────────────────────────────────
@@ -220,12 +258,12 @@ def main():
     )
     parser.add_argument("--database", required=True,
                         help="Path to your CT database folder")
-    parser.add_argument("--max-patients", type=int, default=15,
-                        help="Max number of patients to use (default: 15)")
+    parser.add_argument("--max-patients", type=int, default=250,
+                        help="Max number of patients to use (default: 250)")
     parser.add_argument("--epochs", type=int, default=10,
-                        help="Training epochs (default: 10 for demo, use 500 for full)")
+                        help="Training epochs PER BATCH (default: 10 for demo, use 500 for full)")
     parser.add_argument("--full", action="store_true",
-                        help="Full training (500 epochs). Overrides --epochs.")
+                        help="Full training (500 epochs per batch). Overrides --epochs.")
     parser.add_argument("--device", choices=["cuda", "mps", "cpu"], default=None,
                         help="Device: cuda (GPU), mps (Apple Silicon), cpu (default: auto)")
     parser.add_argument("--workspace", default="nnunet_workspace",
@@ -236,6 +274,12 @@ def main():
                         help="Skip TotalSegmentator (use if masks already exist in processed_data/)")
     parser.add_argument("--fold", default="0",
                         help="Which fold to train (default: 0)")
+    parser.add_argument("--slot-size", type=int, default=3,
+                        help="Train in micro-batches of this many patients (default: 3)")
+    parser.add_argument("--cooldown", type=int, default=120,
+                        help="Seconds to rest between batches (default: 120 = 2 minutes)")
+    parser.add_argument("--start-batch", type=int, default=1,
+                        help="Resume from this batch number (1-indexed, default: 1)")
     args = parser.parse_args()
 
     # ── Auto-detect device ────────────────────────────────────────────────────
@@ -359,76 +403,205 @@ def main():
 
     print(f"\n  {GREEN}✅ {len(ready_cases)} / {len(patients)} cases ready for training{RESET}")
 
-    # ── Step 3: Build nnU-Net dataset ─────────────────────────────────────────
-    step(3, "Building nnU-Net v2 dataset…")
-    if dataset_dir.exists():
-        shutil.rmtree(dataset_dir)
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    # ── Step 3: Build FULL nnU-Net dataset with ALL cases ─────────────────────
+    step(3, f"Building FULL nnU-Net dataset with all {len(ready_cases)} patients…")
+    dataset_id = "001"
+    full_dataset_dir = raw_dir / "Dataset001_Trachea"
+    if full_dataset_dir.exists():
+        shutil.rmtree(full_dataset_dir)
+    build_nnunet_dataset(ready_cases, full_dataset_dir)
+    ok(f"Full dataset written → {full_dataset_dir}  ({len(ready_cases)} cases)")
 
-    build_nnunet_dataset(ready_cases, dataset_dir)
-    ok(f"Dataset written → {dataset_dir}")
-
-    # Write summary JSON for later reference
-    summary = {
-        "cases": [{"id": c["id"], "ct": c["ct_gz"], "mask": c["mask_gz"]} for c in ready_cases],
-        "n_cases": len(ready_cases),
-        "epochs_planned": epochs,
-        "device": args.device,
-        "dataset_dir": str(dataset_dir),
-    }
-    with open(workspace / "training_summary.json", "w") as f:
-        json.dump(summary, f, indent=2)
-
-    # ── Step 4: nnU-Net plan + preprocess ─────────────────────────────────────
-    step(4, "Planning + preprocessing (nnUNetv2_plan_and_preprocess)…")
+    # ── Step 4: Plan + preprocess ONCE on the full dataset ────────────────────
+    step(4, "Planning + preprocessing (one-time, full dataset)…")
     for d in [pre_dir, res_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
     success = run_cmd(
-        ["nnUNetv2_plan_and_preprocess", "-d", "001",
+        ["nnUNetv2_plan_and_preprocess", "-d", dataset_id,
          "--verify_dataset_integrity", "-c", "3d_fullres"],
         env=env_vars,
     )
     if not success:
         err("Planning failed. Check dataset integrity above.")
         sys.exit(1)
-    ok("Planning complete")
+    ok("Planning + preprocessing complete for all patients")
 
-    # ── Step 5: Train ─────────────────────────────────────────────────────────
-    step(5, f"Training fold {args.fold} for {epochs} epochs on {args.device.upper()}…")
+    # ── Step 5: Micro-batch training (3 patients at a time, 2-min cooldown) ──
+    slot_size = args.slot_size
+    cooldown = args.cooldown
+    batches = []
+    for i in range(0, len(ready_cases), slot_size):
+        batches.append(ready_cases[i:i + slot_size])
 
-    if len(ready_cases) < 5:
-        warn(f"Only {len(ready_cases)} cases — nnU-Net will use a single train/val split")
-        warn("(5-fold cross-validation needs at least 5 cases)")
+    total_batches = len(batches)
+    start_batch = max(1, args.start_batch) - 1  # convert to 0-indexed
 
-    if epochs <= 20:
-        info("Demo mode: training for a small number of epochs to show the model is working.")
-        info("For final deployment, run with --full (500 epochs) on the college GPU server.")
+    banner(f"⚡ MICRO-BATCH TRAINING")
+    info(f"Total patients   : {len(ready_cases)}")
+    info(f"Batch size       : {slot_size} patients")
+    info(f"Total batches    : {total_batches}")
+    info(f"Epochs per batch : {epochs}")
+    info(f"Cooldown         : {cooldown}s ({cooldown//60} min {cooldown%60}s) between batches")
+    info(f"Starting from    : batch {start_batch + 1}")
+    info(f"Device           : {args.device.upper()}")
+    print()
 
-    train_cmd = [
-        "nnUNetv2_train",
-        "001",
-        "3d_fullres",
-        args.fold,
-        "--npz",
-    ]
+    trainer_name = "nnUNetTrainer"
+    model_output_dir = res_dir / "Dataset001_Trachea" / f"{trainer_name}__nnUNetPlans__3d_fullres" / f"fold_{args.fold}"
+    total_start = time.time()
+    batches_completed = 0
 
-    # For non-CUDA devices — disable compilation
-    train_env = dict(env_vars)
-    if args.device != "cuda":
-        train_env["nnUNet_compile"] = "F"
-        train_env["nnUNet_n_proc_DA"] = "2"   # fewer data augmentation workers
+    for batch_idx in range(start_batch, total_batches):
+        batch_cases = batches[batch_idx]
+        batch_ids = [c["id"] for c in batch_cases]
 
-    t_start = time.time()
-    success = run_cmd(train_cmd, env=train_env)
-    elapsed = time.time() - t_start
+        step(5, f"[Batch {batch_idx+1}/{total_batches}] Training on {len(batch_cases)} patients…")
+        print(f"  Patients in this batch:")
+        for pid in batch_ids:
+            print(f"    • {pid}")
+
+        # ── Create a temporary subset dataset with symlinks ──────────────────
+        # We create Dataset002_Trachea as a lightweight subset pointing to the
+        # same preprocessed data, so nnU-Net only trains on these N patients.
+        batch_dataset_id = "002"
+        batch_dataset_dir = raw_dir / "Dataset002_Trachea"
+
+        # Clean up any previous batch dataset
+        if batch_dataset_dir.exists():
+            shutil.rmtree(batch_dataset_dir)
+
+        (batch_dataset_dir / "imagesTr").mkdir(parents=True, exist_ok=True)
+        (batch_dataset_dir / "labelsTr").mkdir(parents=True, exist_ok=True)
+
+        # Symlink the batch patients' files from the full dataset
+        training_entries = []
+        for c in batch_cases:
+            img_name = f"{c['id']}_0000.nii.gz"
+            lbl_name = f"{c['id']}.nii.gz"
+            src_img = full_dataset_dir / "imagesTr" / img_name
+            src_lbl = full_dataset_dir / "labelsTr" / lbl_name
+            dst_img = batch_dataset_dir / "imagesTr" / img_name
+            dst_lbl = batch_dataset_dir / "labelsTr" / lbl_name
+
+            if src_img.exists():
+                os.symlink(src_img, dst_img)
+            if src_lbl.exists():
+                os.symlink(src_lbl, dst_lbl)
+
+            training_entries.append({
+                "image": f"imagesTr/{img_name}",
+                "label": f"labelsTr/{lbl_name}",
+            })
+
+        batch_dataset_json = {
+            "channel_names": {"0": "CT"},
+            "labels": {"background": 0, "trachea": 1},
+            "numTraining": len(batch_cases),
+            "file_ending": ".nii.gz",
+            "name": "Dataset002_Trachea",
+            "description": f"Trachea batch {batch_idx+1}/{total_batches}",
+            "reference": "TracheaAI",
+            "licence": "private",
+            "release": "1.0.0",
+            "overwrite_image_reader_writer": "SimpleITKIO",
+            "training": training_entries,
+        }
+        with open(batch_dataset_dir / "dataset.json", "w") as f:
+            json.dump(batch_dataset_json, f, indent=2)
+
+        # Quick preprocess for this batch subset
+        run_cmd(
+            ["nnUNetv2_plan_and_preprocess", "-d", batch_dataset_id,
+             "--verify_dataset_integrity", "-c", "3d_fullres"],
+            env=env_vars,
+        )
+
+        # ── Build training command ───────────────────────────────────────────
+        train_cmd = [
+            "nnUNetv2_train",
+            batch_dataset_id,
+            "3d_fullres",
+            args.fold,
+            "--npz",
+        ]
+
+        # Chain from previous checkpoint if it exists
+        chkpt_final = model_output_dir / "checkpoint_final.pth"
+        chkpt_latest = model_output_dir / "checkpoint_latest.pth"
+        # For batch > 1, use the saved checkpoint from Dataset001 training
+        # We copy the model to Dataset002's result dir so nnU-Net can continue
+        batch_model_dir = res_dir / "Dataset002_Trachea" / f"{trainer_name}__nnUNetPlans__3d_fullres" / f"fold_{args.fold}"
+
+        if batch_idx > start_batch:
+            prev_chkpt = chkpt_final if chkpt_final.exists() else (chkpt_latest if chkpt_latest.exists() else None)
+            if prev_chkpt is None:
+                # Check in the batch model dir from previous iteration
+                prev_batch_final = batch_model_dir / "checkpoint_final.pth"
+                prev_batch_latest = batch_model_dir / "checkpoint_latest.pth"
+                prev_chkpt = prev_batch_final if prev_batch_final.exists() else (prev_batch_latest if prev_batch_latest.exists() else None)
+
+            if prev_chkpt:
+                info(f"Continuing from checkpoint: {prev_chkpt.name}")
+                train_cmd.extend(["-pretrained_weights", str(prev_chkpt)])
+            else:
+                warn("No previous checkpoint found — training from scratch")
+
+        train_env = dict(env_vars)
+        if args.device != "cuda":
+            train_env["nnUNet_compile"] = "F"
+            train_env["nnUNet_n_proc_DA"] = "2"
+
+        # Reduce data augmentation workers to save RAM on local machine
+        train_env["nnUNet_n_proc_DA"] = "1"
+
+        t_batch_start = time.time()
+        success = run_cmd(train_cmd, env=train_env)
+        t_batch_elapsed = time.time() - t_batch_start
+        batches_completed += 1
+
+        if success:
+            ok(f"Batch {batch_idx+1}/{total_batches} done in {t_batch_elapsed/60:.1f} min")
+            # Copy the trained checkpoint back to Dataset001 model dir for chaining
+            batch_final = batch_model_dir / "checkpoint_final.pth"
+            batch_latest = batch_model_dir / "checkpoint_latest.pth"
+            if batch_final.exists() or batch_latest.exists():
+                model_output_dir.mkdir(parents=True, exist_ok=True)
+                src_chk = batch_final if batch_final.exists() else batch_latest
+                shutil.copy2(str(src_chk), str(model_output_dir / src_chk.name))
+                ok(f"Checkpoint saved → {model_output_dir / src_chk.name}")
+        else:
+            warn(f"Batch {batch_idx+1} training returned non-zero — continuing anyway")
+
+        # ── Cooldown between batches ─────────────────────────────────────────
+        if batch_idx < total_batches - 1:
+            print(f"\n  {CYAN}😴 Cooling down for {cooldown}s ({cooldown//60} min {cooldown%60}s)…")
+            print(f"     Next batch: {batch_idx+2}/{total_batches}")
+            print(f"     Progress: {batches_completed}/{total_batches} batches done")
+            remaining_batches = total_batches - batch_idx - 1
+            est_remaining = remaining_batches * (t_batch_elapsed + cooldown)
+            print(f"     Est. remaining: ~{est_remaining/60:.0f} min ({est_remaining/3600:.1f} hrs){RESET}")
+
+            # Cooldown with a countdown so you can see it's alive
+            for sec in range(cooldown, 0, -10):
+                mins, secs = divmod(sec, 60)
+                print(f"     ⏳ {mins:02d}:{secs:02d} remaining…", end="\r")
+                time.sleep(min(10, sec))
+            print(f"     ✅ Cooldown complete!              ")
+
+    total_elapsed = time.time() - total_start
 
     # ── Summary ───────────────────────────────────────────────────────────────
     banner("🎉 Training Complete!")
-    print(f"  Patients used : {len(ready_cases)}")
-    print(f"  Epochs        : {epochs}")
-    print(f"  Time elapsed  : {elapsed/60:.1f} min")
-    print(f"  Model saved   : {res_dir}")
+    print(f"  Patients used  : {len(ready_cases)}")
+    print(f"  Batch size     : {slot_size}")
+    print(f"  Batches done   : {batches_completed}/{total_batches}")
+    print(f"  Epochs/batch   : {epochs}")
+    print(f"  Total time     : {total_elapsed/60:.1f} min ({total_elapsed/3600:.1f} hrs)")
+    print(f"  Model saved    : {res_dir}")
+    print()
+    print(f"  {BOLD}To resume from a specific batch:{RESET}")
+    print(f"    python3 auto_train.py --database {args.database} --start-batch <N>")
     print()
     print(f"  {BOLD}To predict on a new CT scan:{RESET}")
     print(f"    python3 training/predict.py --input <ct.nii.gz> --scan-id <PatientID> \\")

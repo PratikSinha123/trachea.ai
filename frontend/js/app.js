@@ -7,13 +7,14 @@
 import { Viewer3D } from "./viewer3d.js";
 import { SliceViewer } from "./sliceViewer.js";
 
-const API_BASE = window.location.origin;
+const API_BASE = (window.TRACHEA_API_BASE_URL || window.location.origin).replace(/\/$/, "");
 
 // ─── State ──────────────────────────────────────────────────
 let viewer3d = null;
 let sliceViewer = null;
 let currentScan = null;
 let morphFrameCount = 0;
+let isVercelMode = false;  // true when running on Vercel (read-only viewer)
 
 // ─── DOM Elements ───────────────────────────────────────────
 const loadingScreen = document.getElementById("loading-screen");
@@ -61,7 +62,7 @@ async function init() {
     loaderBar.style.width = "60%";
 
     // Init slice viewer
-    sliceViewer = new SliceViewer("slice-canvas", "profile-chart");
+    sliceViewer = new SliceViewer("slice-canvas", "profile-chart", API_BASE);
     loaderBar.style.width = "80%";
 
     // Load scan list
@@ -230,8 +231,34 @@ async function checkServer() {
     try {
         const res = await fetch(`${API_BASE}/api/scans`);
         if (res.ok) {
-            deviceBadge.querySelector(".badge-text").textContent = "Server Connected";
-            deviceBadge.querySelector(".badge-dot").style.background = "#34d399";
+            // Detect if we're on Vercel (no local processing available)
+            const isCloud = window.location.hostname.includes('vercel.app')
+                || window.location.hostname.includes('.vercel.')
+                || (!window.location.hostname.includes('localhost')
+                    && !window.location.hostname.includes('127.0.0.1'));
+
+            if (isCloud) {
+                isVercelMode = true;
+                deviceBadge.querySelector(".badge-text").textContent = "☁ Cloud Mode";
+                deviceBadge.querySelector(".badge-dot").style.background = "#818cf8";
+
+                // Disable processing buttons in cloud mode
+                const btnProcess = document.getElementById("btn-process");
+                const btnNnunet = document.getElementById("btn-nnunet-predict");
+                if (btnProcess) {
+                    btnProcess.disabled = true;
+                    btnProcess.title = "Processing only available locally";
+                    btnProcess.style.opacity = "0.4";
+                }
+                if (btnNnunet) {
+                    btnNnunet.disabled = true;
+                    btnNnunet.title = "AI prediction only available locally";
+                    btnNnunet.style.opacity = "0.4";
+                }
+            } else {
+                deviceBadge.querySelector(".badge-text").textContent = "Local Server";
+                deviceBadge.querySelector(".badge-dot").style.background = "#34d399";
+            }
         }
     } catch {
         deviceBadge.querySelector(".badge-text").textContent = "Server Offline";

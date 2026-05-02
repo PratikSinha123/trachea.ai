@@ -6,11 +6,12 @@
  */
 
 export class SliceViewer {
-    constructor(canvasId, chartCanvasId) {
+    constructor(canvasId, chartCanvasId, apiBase = window.location.origin) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext("2d");
         this.chartCanvas = document.getElementById(chartCanvasId);
         this.chartCtx = this.chartCanvas.getContext("2d");
+        this.apiBase = apiBase.replace(/\/$/, "");
 
         this.scanId = null;
         this.axis = "axial";
@@ -43,7 +44,7 @@ export class SliceViewer {
     async loadSlice() {
         if (!this.scanId) return;
 
-        const url = `/api/scan/${this.scanId}/slice/${this.axis}/${this.currentIndex}`;
+        const url = `${this.apiBase}/api/scan/${this.scanId}/slice/${this.axis}/${this.currentIndex}`;
 
         try {
             const response = await fetch(url);

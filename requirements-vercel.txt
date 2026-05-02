@@ -1,0 +1,3 @@
+# Vercel serverless — minimal dependencies only.
+# The API handler (api/index.py) uses only Python stdlib.
+# No additional packages needed.
