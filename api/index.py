@@ -13,7 +13,21 @@ from http.server import BaseHTTPRequestHandler
 # On Vercel, static files in public/ are served at the root.
 # But the API function can read them from the filesystem too.
 # Vercel project root is at /var/task (or wherever the function runs).
-DATA_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
+# Try to find the public/data directory robustly
+_possible_roots = [
+    os.getcwd(),
+    os.path.dirname(os.path.abspath(__file__)),
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "/var/task"
+]
+DATA_ROOT = None
+for r in _possible_roots:
+    candidate = os.path.join(r, "public", "data")
+    if os.path.isdir(candidate):
+        DATA_ROOT = candidate
+        break
+if not DATA_ROOT:
+    DATA_ROOT = os.path.join(os.getcwd(), "public", "data")  # default fallback
 
 
 def _read_json(path):
