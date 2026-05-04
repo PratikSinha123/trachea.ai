@@ -1,0 +1,6 @@
+[project]
+name = "trachea-ai"
+version = "0.1.0"
+description = "Trachea AI Vercel Deployment"
+requires-python = ">=3.12"
+dependencies = []
