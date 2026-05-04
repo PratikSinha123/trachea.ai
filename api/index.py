@@ -69,7 +69,16 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         """Route GET requests to the appropriate handler."""
-        path = self.path.split("?")[0].rstrip("/")
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
+        
+        # If Vercel rewrites /api/foo to /api/index.py?route=foo
+        if "route" in query:
+            route_val = query["route"][0].strip("/")
+            path = "/api/" + route_val if route_val else "/api"
+        else:
+            path = parsed.path.rstrip("/")
 
         # /api/scans — list all scans
         if path == "/api/scans":
@@ -115,7 +124,14 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         """Handle POST requests — limited functionality on Vercel."""
-        path = self.path.split("?")[0].rstrip("/")
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
+        if "route" in query:
+            route_val = query["route"][0].strip("/")
+            path = "/api/" + route_val if route_val else "/api"
+        else:
+            path = parsed.path.rstrip("/")
 
         if path in ("/api/process", "/api/nnunet/predict"):
             _json_response(self, {
