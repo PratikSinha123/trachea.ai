@@ -1,3 +1,0 @@
-# TracheaAI — Vercel deployment (minimal)
-# The serverless API uses only Python stdlib, no pip packages needed.
-# For local pipeline, use: pip install -r requirements-local.txt
