@@ -246,6 +246,16 @@ async def get_status(scan_id: str):
     return processing_status.get(scan_id, {"status": "unknown"})
 
 
+@app.get("/api/config")
+async def get_config():
+    """Serve the config JavaScript."""
+    import json
+    from fastapi.responses import Response
+    api_base = os.environ.get("TRACHEA_API_BASE_URL", "")
+    js = f'window.TRACHEA_API_BASE_URL = {json.dumps(api_base)};'
+    return Response(content=js, media_type="application/javascript")
+
+
 # ── nnU-Net Prediction endpoints ──────────────────────────────────────────────
 
 class PredictRequest(BaseModel):
