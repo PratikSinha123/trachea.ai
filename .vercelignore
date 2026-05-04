@@ -24,7 +24,11 @@ reconstruction/
 visualization/
 server/
 
+# Frontend (now served from public/)
+frontend/
+
 # Dev files
+.venv/
 __pycache__/
 *.pyc
 .git/
@@ -32,3 +36,4 @@ __pycache__/
 .ruff_cache/
 .vscode/
 .kilo/
+data_preparation/

@@ -5,15 +5,13 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python@4.0.0",
-      "maxDuration": 30
+      "runtime": "@vercel/python",
+      "maxDuration": 30,
+      "includeFiles": "public/data/**"
     }
   },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index.py" },
-    { "source": "/", "destination": "/frontend/index.html" },
-    { "source": "/css/:path*", "destination": "/frontend/css/:path*" },
-    { "source": "/js/:path*", "destination": "/frontend/js/:path*" }
+    { "source": "/api/:path*", "destination": "/api/index.py" }
   ],
   "headers": [
     {
