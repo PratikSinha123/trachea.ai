@@ -3,7 +3,9 @@
   "framework": null,
   "buildCommand": "",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py?route=$1" }
+    { "source": "/api/(.*)", "destination": "/api/index.py?route=$1" },
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/(css|js|data)/(.*)", "destination": "/public/$1/$2" }
   ],
   "headers": [
     {
