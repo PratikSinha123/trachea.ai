@@ -35,7 +35,8 @@ class TracheaSegmentor:
             "TotalSegmentator",
             "-i", temp_in,
             "-o", temp_out_dir,
-            "--roi_subset", "trachea", "aorta", "pulmonary_artery", "heart"
+            "--roi_subset", "trachea", "aorta", "heart",
+            "--fast"
         ]
         
         if self.device in ["cuda", "mps"]:
@@ -52,12 +53,15 @@ class TracheaSegmentor:
             
         # Read the segmented masks
         masks = {}
-        for organ in ["trachea", "aorta", "pulmonary_artery", "heart"]:
+        target_organs = ["trachea", "aorta", "heart"]
+        
+        for organ in target_organs:
             mask_path = os.path.join(temp_out_dir, f"{organ}.nii.gz")
             if os.path.exists(mask_path):
                 masks[organ] = sitk.ReadImage(mask_path)
             else:
                 # Create empty mask if an organ wasn't found
+                print(f"  ⚠ Organ '{organ}' not found by AI, using empty mask.")
                 empty = sitk.Image(resampled.GetSize(), sitk.sitkUInt8)
                 empty.CopyInformation(resampled)
                 masks[organ] = empty
@@ -98,8 +102,9 @@ class TracheaSegmentor:
         }
         
         # Resample all context masks back to original space
-        for organ in ["aorta", "pulmonary_artery", "heart", "body"]:
-            return_dict[f"{organ}_mask"] = resample_mask_like(masks[organ], image)
+        for organ in ["aorta", "heart", "body"]:
+            if organ in masks:
+                return_dict[f"{organ}_mask"] = resample_mask_like(masks[organ], image)
             
         return return_dict
 

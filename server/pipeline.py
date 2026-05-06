@@ -151,6 +151,12 @@ class Pipeline:
             return None
 
         series_files = reader.GetGDCMSeriesFileNames(dicom_folder, series_ids[0])
+        
+        # Skip small series (scouts/topograms)
+        if len(series_files) < 20:
+            print(f"  ⏭  Skipping {scan_id} (only {len(series_files)} slices, likely a scout image)")
+            return None
+
         reader.SetFileNames(series_files)
         image = reader.Execute()
 
