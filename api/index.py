@@ -134,6 +134,28 @@ class handler(BaseHTTPRequestHandler):
         if path == "/api/config":
             return self._handle_config()
 
+        # /api/debug — list files for debugging
+        if path == "/api/debug":
+            import os
+            debug_info = {
+                "cwd": os.getcwd(),
+                "file": __file__,
+                "possible_roots": _possible_roots,
+                "DATA_ROOT": DATA_ROOT,
+                "contents": {}
+            }
+            for r in _possible_roots:
+                if os.path.isdir(r):
+                    try:
+                        debug_info["contents"][r] = os.listdir(r)
+                        # Check public/data if r exists
+                        pd = os.path.join(r, "public", "data")
+                        if os.path.isdir(pd):
+                            debug_info["contents"][pd] = os.listdir(pd)
+                    except:
+                        debug_info["contents"][r] = "error"
+            return _json_response(self, debug_info)
+
         _error_response(self, f"Unknown API route: {path}", 404)
 
     def do_POST(self):
