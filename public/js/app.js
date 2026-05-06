@@ -89,7 +89,8 @@ async function init() {
 // ─── API Calls ──────────────────────────────────────────────
 async function loadScanList() {
     try {
-        const res = await fetch(`${API_BASE}/api/scans`);
+        // Fetch from static JSON directly (more reliable on Vercel)
+        const res = await fetch(`${API_BASE}/data/scans.json`);
         const scans = await res.json();
 
         scanSelect.innerHTML = '<option value="">Select a scan...</option>';
@@ -100,7 +101,13 @@ async function loadScanList() {
             scanSelect.appendChild(opt);
         }
     } catch (err) {
-        console.warn("Could not load scan list:", err);
+        console.warn("Could not load scan list from static JSON:", err);
+        // Fallback to API
+        try {
+            const res = await fetch(`${API_BASE}/api/scans`);
+            const scans = await res.json();
+            // ... same logic ...
+        } catch (e) {}
     }
 }
 
@@ -115,19 +122,19 @@ async function loadScan(scanId) {
     currentScan = scanId;
 
     try {
-        // Load metadata
-        const metaRes = await fetch(`${API_BASE}/api/scan/${scanId}`);
+        // Load metadata (directly from static file)
+        const metaRes = await fetch(`${API_BASE}/data/${scanId}/metadata.json`);
         const meta = await metaRes.json();
 
-        // Load 3D meshes
+        // Load 3D meshes (directly from static files)
         try {
-            await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/diseased`, "diseased");
+            await viewer3d.loadMesh(`${API_BASE}/data/${scanId}/meshes/diseased.glb`, "diseased");
         } catch (e) {
             console.warn("Could not load diseased mesh:", e);
         }
 
         try {
-            await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/healthy`, "healthy");
+            await viewer3d.loadMesh(`${API_BASE}/data/${scanId}/meshes/healthy.glb`, "healthy");
         } catch (e) {
             console.warn("Could not load healthy mesh:", e);
         }
@@ -136,10 +143,8 @@ async function loadScan(scanId) {
         const contextLayers = ["body", "heart", "aorta", "pulmonary_artery"];
         for (const layer of contextLayers) {
             try {
-                await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/${layer}`, layer);
-            } catch (e) {
-                console.warn(`Could not load ${layer} mesh:`, e);
-            }
+                await viewer3d.loadMesh(`${API_BASE}/data/${scanId}/meshes/${layer}.glb`, layer);
+            } catch (e) {}
         }
 
         // Disable context toggles if the meshes don't exist in the current scan
@@ -159,43 +164,46 @@ async function loadScan(scanId) {
         });
 
         // Load morph frames — non-blocking background load
-        const morphRes = await fetch(`${API_BASE}/api/scan/${scanId}/morph_count`);
-        const { count } = await morphRes.json();
+        const count = (meta.meshes && meta.meshes.morph_frames) ? meta.meshes.morph_frames.length : 0;
         morphFrameCount = count;
         morphSlider.max = Math.max(0, count - 1);
         morphSlider.value = 0;
-        morphFrameLabel.textContent = `Loading… 0 / ${count - 1}`;
+        morphFrameLabel.textContent = count > 0 ? `Loading… 0 / ${count - 1}` : "No morph data";
 
         viewer3d.morphMeshes = new Array(count).fill(null);
 
-        // Load first frame synchronously so morph mode shows something immediately
+        // Load first frame synchronously
         if (count > 0) {
             try {
-                await viewer3d.loadMorphFrame(`${API_BASE}/api/scan/${scanId}/morph/0`, 0);
+                const url = `${API_BASE}/data/${scanId}/meshes/morph/morph_000.glb`;
+                await viewer3d.loadMorphFrame(url, 0);
                 morphFrameLabel.textContent = `0 / ${count - 1}`;
             } catch (e) {
                 console.warn("Morph frame 0 failed:", e);
             }
         }
 
-        // Load remaining frames in background — don't await
-        (async () => {
-            let loaded = 1;
-            for (let i = 1; i < count; i++) {
-                try {
-                    await viewer3d.loadMorphFrame(`${API_BASE}/api/scan/${scanId}/morph/${i}`, i);
-                    loaded++;
-                    // Update label only if still in morph mode
-                    if (viewer3d.displayMode === "morph") {
-                        morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1} (${loaded}/${count} loaded)`;
+        // Load remaining frames in background
+        if (count > 1) {
+            (async () => {
+                let loaded = 1;
+                for (let i = 1; i < count; i++) {
+                    try {
+                        const frameStr = i.toString().padStart(3, "0");
+                        const url = `${API_BASE}/data/${scanId}/meshes/morph/morph_${frameStr}.glb`;
+                        await viewer3d.loadMorphFrame(url, i);
+                        loaded++;
+                        if (viewer3d.displayMode === "morph") {
+                            morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1} (${loaded}/${count} loaded)`;
+                        }
+                    } catch (e) {
+                        console.warn(`Morph frame ${i} failed:`, e);
                     }
-                } catch (e) {
-                    console.warn(`Morph frame ${i} failed:`, e);
                 }
-            }
-            morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1}`;
-            console.log(`✅ All ${count} morph frames loaded`);
-        })();
+                morphFrameLabel.textContent = `${viewer3d.activeMorphFrame} / ${count - 1}`;
+                console.log(`✅ All ${count} morph frames loaded`);
+            })();
+        }
 
         // Update stats
         updateStats(meta.stats || {});
