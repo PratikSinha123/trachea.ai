@@ -107,35 +107,34 @@ function renderScanList(scans) {
 function renderPatientGrid(scans) {
     patientGrid.innerHTML = "";
     if (scans.length === 0) {
-        patientGrid.innerHTML = '<p class="placeholder-text">No patients found matching your search.</p>';
+        patientGrid.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:40px; grid-column: 1/-1;">No patient records match your search criteria.</p>';
         return;
     }
 
     for (const scan of scans) {
         const stenosis = scan.stats?.max_stenosis_pct || 0;
-        const severity = stenosis > 40 ? "critical" : stenosis > 15 ? "warning" : "normal";
-        const statusIcon = severity === "critical" ? "🚨" : severity === "warning" ? "⚠️" : "✅";
-        const statusLabel = severity === "critical" ? "Critical" : severity === "warning" ? "Moderate" : "Normal";
+        const severity = stenosis > 40 ? "critical" : stenosis > 20 ? "warning" : "normal";
+        const statusColor = severity === "critical" ? "var(--clinical-red)" : severity === "warning" ? "var(--clinical-yellow)" : "var(--clinical-green)";
 
         const card = document.createElement("div");
-        card.className = `patient-card card-${severity}`;
+        card.className = "patient-card";
         card.innerHTML = `
             <div class="card-header">
-                <span class="patient-id">${scan.scan_id}</span>
-                <span class="status-badge">${statusIcon} ${statusLabel}</span>
+                <span class="patient-id">${scan.scan_id.split('__')[0]}</span>
+                <span class="status-indicator status-${severity}"></span>
             </div>
-            <div class="card-stats">
-                <div class="card-stat">
-                    <span class="card-stat-label">Max Stenosis</span>
-                    <span class="card-stat-value" style="color:${severity === 'normal' ? 'var(--accent-green)' : severity === 'warning' ? 'var(--accent-orange)' : 'var(--accent-red)'}">${stenosis.toFixed(1)}%</span>
+            <div class="card-metrics">
+                <div class="card-metric">
+                    <span class="metric-label">Stenosis</span>
+                    <span class="metric-value" style="color:${statusColor}">${stenosis.toFixed(1)}%</span>
                 </div>
-                <div class="card-stat">
-                    <span class="card-stat-label">Min Diam</span>
-                    <span class="card-stat-value">${(scan.stats?.min_diameter_mm || 0).toFixed(1)} mm</span>
+                <div class="card-metric">
+                    <span class="metric-label">Min Diam</span>
+                    <span class="metric-value">${(scan.stats?.min_diameter_mm || 0).toFixed(1)}mm</span>
                 </div>
             </div>
-            <div class="card-actions">
-                <button class="btn btn-sm btn-accent btn-card" onclick="window._loadScan('${scan.scan_id}')">Open View</button>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn-primary" style="flex:1; font-size:11px; padding:8px;" onclick="window._loadScan('${scan.scan_id}')">ANALYZE 3D</button>
             </div>
         `;
         patientGrid.appendChild(card);

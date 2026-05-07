@@ -3,389 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TracheaAI — Intelligent Trachea Analysis & 3D Visualization</title>
-    <meta name="description" content="AI-powered trachea segmentation, healthy reconstruction, and interactive 3D morphing visualization from CT scans.">
+    <title>TracheaAI | Enterprise Medical Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loader-container">
-            <div class="dna-helix">
-                <div class="strand"></div>
-                <div class="strand"></div>
-                <div class="strand"></div>
+    <!-- Top Navigation -->
+    <header class="top-bar">
+        <div class="logo">
+            <span class="logo-icon">🫁</span>
+            <span class="logo-name">TRACHEA.AI</span>
+        </div>
+        <div class="top-bar-center">
+            <div class="search-container">
+                <input type="text" id="patient-search" class="search-input" placeholder="Search Hospital Record ID / Scan UID...">
             </div>
-            <h1 class="loader-title">TracheaAI</h1>
-            <p class="loader-subtitle">Initializing 3D Visualization Engine</p>
-            <div class="loader-progress">
-                <div class="loader-bar" id="loader-bar"></div>
+            <button id="btn-dashboard" class="btn-primary" style="background:transparent; border:1px solid var(--clinical-blue); color:var(--clinical-blue);">PORTFOLIO</button>
+            <button id="btn-process" class="btn-primary">NEW SCAN</button>
+        </div>
+        <div class="top-bar-right">
+            <div id="device-badge" style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; display:flex; align-items:center; gap:8px;">
+                <span class="status-indicator status-normal"></span>
+                <span class="badge-text">System Online</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="content">
+        <!-- Sidebar Navigation -->
+        <aside class="panel">
+            <div class="panel-section">
+                <div class="section-header">
+                    <span class="section-title">Anatomical Controls</span>
+                </div>
+                <div class="control-box">
+                    <div class="btn-toggle-group" id="display-mode">
+                        <button class="btn-toggle active" data-mode="diseased">PATHOLOGY</button>
+                        <button class="btn-toggle" data-mode="healthy">HEALTHY</button>
+                        <button class="btn-toggle" data-mode="both">OVERLAY</button>
+                        <button class="btn-toggle" data-mode="morph">MORPH</button>
+                    </div>
+                </div>
+                <div class="control-box">
+                    <span class="metric-label">Tissue Opacity</span>
+                    <input type="range" id="opacity-slider" class="slider" style="width:100%;" min="0" max="100" value="85">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="section-header">
+                    <span class="section-title">Clinical Triage</span>
+                </div>
+                <div id="severity-badge" style="padding:16px; border-radius:8px; border:1px solid var(--border-subtle); background:rgba(15,23,42,0.5);">
+                    <span class="metric-label">Status</span>
+                    <div id="severity-label" style="font-size:18px; font-weight:800; color:var(--clinical-green);">NORMAL</div>
+                </div>
+            </div>
+
+            <div class="panel-section" style="flex:1; overflow-y:auto;">
+                <div class="section-header">
+                    <span class="section-title">Metric Analytics</span>
+                </div>
+                <div class="card-metrics" id="stats-container">
+                    <div class="card-stat">
+                        <span class="metric-label">Lumen Vol</span>
+                        <span id="stat-vol-diseased" class="metric-value">—</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="metric-label">Max Stenosis</span>
+                        <span id="stat-stenosis" class="metric-value" style="color:var(--clinical-red);">—</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="metric-label">Min Diam</span>
+                        <span id="stat-min-diam" class="metric-value">—</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="metric-label">Anomalies</span>
+                        <span id="stat-anomalies" class="metric-value">—</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Viewport -->
+        <section class="viewer-container" id="viewer-container">
+            <canvas id="viewer-canvas"></canvas>
+            
+            <div id="dashboard-overlay" class="dashboard-overlay">
+                <div class="dashboard-header">
+                    <h1 class="dashboard-title">Clinical Intelligence Dashboard</h1>
+                    <div class="dashboard-stats-row">
+                        <div class="dash-stat-item">Total Scans: <b id="dash-total-count">0</b></div>
+                        <div class="dash-stat-item">Critical Findings: <b id="dash-stenosis-count" style="color:var(--clinical-red);">0</b></div>
+                    </div>
+                </div>
+                <div id="patient-grid" class="patient-grid">
+                    <!-- Cards injected via JS -->
+                </div>
+            </div>
+
+            <div class="hud-overlay hud-top-left">
+                <div id="viewer-info">SYSTEM READY // WAITING FOR SELECTION</div>
+            </div>
+            <div class="hud-overlay hud-bottom-right">
+                <div>AXIS: X-SAGITTAL | Y-AXIAL | Z-CORONAL</div>
+            </div>
+        </section>
+
+        <!-- Right Analysis Panel -->
+        <aside class="panel panel-right">
+            <div class="panel-section">
+                <div class="section-header">
+                    <span class="section-title">Visual Diagnosis</span>
+                </div>
+                <div class="btn-toggle-group" style="margin-bottom:12px;">
+                    <button class="btn-toggle active" data-view="ct">CT SLICES</button>
+                    <button class="btn-toggle" data-view="report">REPORT</button>
+                </div>
+                <div id="ct-view-container" style="background:#000; aspect-ratio:1; border-radius:8px; overflow:hidden; border:1px solid var(--border-subtle);">
+                    <canvas id="slice-canvas" style="width:100%; height:100%;"></canvas>
+                </div>
+                <div id="report-view-container" class="hidden" style="padding:16px; background:var(--obsidian); border-radius:8px; border:1px solid var(--border-subtle);">
+                    <div id="report-content" style="font-size:12px; line-height:1.6; color:var(--text-secondary);">
+                        No clinical report generated.
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal Base -->
+    <div id="process-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:2000; display:flex; align-items:center; justify-content:center;">
+        <div style="background:var(--deep-azure); padding:40px; border-radius:24px; border:1px solid var(--border-subtle); width:500px;">
+            <h2 style="margin-bottom:20px;">Initialize New Pipeline</h2>
+            <input type="text" id="input-path" placeholder="DICOM Source Path" style="width:100%; background:var(--obsidian); border:1px solid var(--border-subtle); padding:12px; border-radius:8px; color:#fff; margin-bottom:16px;">
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button id="btn-cancel-process" class="btn-primary" style="background:transparent; color:var(--text-dim);">CANCEL</button>
+                <button id="btn-start-process" class="btn-primary">START ANALYSIS</button>
             </div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div id="app" class="app hidden">
-        <!-- Top Bar -->
-        <header class="top-bar">
-            <div class="top-bar-left">
-                <div class="logo">
-                    <div class="logo-icon">🫁</div>
-                    <div class="logo-text">
-                        <span class="logo-name">TracheaAI</span>
-                        <span class="logo-version">v1.0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="top-bar-center">
-                <div class="scan-selector">
-                    <div class="search-container">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="patient-search" class="search-input" placeholder="Search Patients...">
-                    </div>
-                    <select id="scan-select" class="scan-dropdown">
-                        <option value="">Select a scan...</option>
-                    </select>
-                    <button id="btn-dashboard" class="btn btn-ghost" title="View Patient Portfolio">
-                        <span class="btn-icon">📊</span> Dashboard
-                    </button>
-                    <button id="btn-process" class="btn btn-accent" title="Process new scan">
-                        <span class="btn-icon">⚡</span> Process
-                    </button>
-                </div>
-            </div>
-            <div class="top-bar-right">
-                <div class="device-badge" id="device-badge">
-                    <span class="badge-dot"></span>
-                    <span class="badge-text">Connecting...</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Content -->
-        <main class="content">
-            <!-- Left Panel — Controls -->
-            <aside class="panel panel-left" id="panel-left">
-                <div class="panel-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">🎨</span> Visualization
-                    </h3>
-                    <div class="control-group">
-                        <label class="control-label">Display Mode</label>
-                        <div class="toggle-group" id="display-mode">
-                            <button class="toggle-btn active" data-mode="diseased">Diseased</button>
-                            <button class="toggle-btn" data-mode="healthy">Healthy</button>
-                            <button class="toggle-btn" data-mode="both">Both</button>
-                            <button class="toggle-btn" data-mode="morph">Morph</button>
-                        </div>
-                    </div>
-                    <div class="control-group" id="morph-controls" style="display:none">
-                        <label class="control-label" style="color:#a78bfa;">🔄 Disease → Recovery Timeline</label>
-
-                        <!-- Color legend -->
-                        <div style="display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
-                            <span style="font-size:10px; color:#f87171; font-weight:600;">🔴 Diseased</span>
-                            <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #f87171, #facc15, #34d399);"></div>
-                            <span style="font-size:10px; color:#34d399; font-weight:600;">Healthy 🟢</span>
-                        </div>
-
-                        <div class="morph-slider-container">
-                            <input type="range" id="morph-slider" class="morph-slider" min="0" max="20" value="0" step="1">
-                        </div>
-                        <div class="morph-playback">
-                            <button id="btn-play-morph" class="btn btn-sm btn-ghost">▶ Play</button>
-                            <span id="morph-frame-label" class="morph-frame-label">Loading…</span>
-                        </div>
-                        <p style="font-size:10px; color:#6b7280; margin-top:6px; line-height:1.4;">
-                            Each step interpolates between diseased and healthy anatomy. Drag slider or press Play to animate.
-                        </p>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Opacity</label>
-                        <input type="range" id="opacity-slider" class="slider" min="0" max="100" value="85">
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Wireframe</label>
-                        <label class="switch">
-                            <input type="checkbox" id="wireframe-toggle">
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label" style="color: #22d3ee; letter-spacing: 0.05em;">✂ Cross Section</label>
-                        <label class="switch">
-                            <input type="checkbox" id="cross-section-toggle">
-                            <span class="switch-slider"></span>
-                        </label>
-                        <div id="cross-section-controls" style="display:none; margin-top: 8px;">
-                            <label class="control-label" style="font-size:11px; margin-bottom:4px;">Slice Position</label>
-                            <input type="range" id="cross-section-slider" class="slider" min="-100" max="100" value="0" step="1">
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">🫁 Breathing Anim</label>
-                        <label class="switch">
-                            <input type="checkbox" id="breathing-toggle" checked>
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">⚠ Stenosis Markers</label>
-                        <label class="switch">
-                            <input type="checkbox" id="annotation-toggle" checked>
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Context Layers</label>
-                        <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
-                                <input type="checkbox" id="toggle-body" class="context-toggle" data-layer="body" style="accent-color: var(--accent);">
-                                Skin / Body Contour
-                            </label>
-                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
-                                <input type="checkbox" id="toggle-heart" class="context-toggle" data-layer="heart" style="accent-color: var(--accent);">
-                                Heart
-                            </label>
-                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; cursor: pointer;">
-                                <input type="checkbox" id="toggle-vessels" class="context-toggle" data-layer="vessels" style="accent-color: var(--accent);">
-                                Blood Vessels (Aorta & PA)
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">📐</span> Measurements
-                    </h3>
-
-                    <!-- Clinical severity badge -->
-                    <div id="severity-badge" style="display:none; margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3);">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span id="severity-icon" style="font-size:18px;">⚠️</span>
-                            <div>
-                                <div id="severity-label" style="font-size:13px; font-weight:600; color:#f87171;">Severe Stenosis Detected</div>
-                                <div id="severity-sub" style="font-size:11px; color:#9ca3af; margin-top:2px;">Requires immediate clinical review</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="stats-container" class="stats-container">
-                        <!-- Row 1: Volumes -->
-                        <div class="stat-card" title="Volume of diseased trachea lumen">
-                            <span class="stat-label">🔴 Diseased Vol.</span>
-                            <span class="stat-value" id="stat-vol-diseased">—</span>
-                        </div>
-                        <div class="stat-card" title="Volume of healthy/predicted trachea lumen">
-                            <span class="stat-label">🟢 Healthy Vol.</span>
-                            <span class="stat-value" id="stat-vol-healthy">—</span>
-                        </div>
-                        <div class="stat-card" title="Volume reduction due to disease">
-                            <span class="stat-label">📉 Vol. Reduction</span>
-                            <span class="stat-value" id="stat-vol-change">—</span>
-                        </div>
-
-                        <!-- Row 2: Diameters -->
-                        <div class="stat-card" title="Average tracheal diameter in diseased state">
-                            <span class="stat-label">⌀ Avg Diam (D)</span>
-                            <span class="stat-value" id="stat-avg-diam">—</span>
-                        </div>
-                        <div class="stat-card" title="Average tracheal diameter in healthy state">
-                            <span class="stat-label">⌀ Avg Diam (H)</span>
-                            <span class="stat-value" id="stat-avg-diam-h">—</span>
-                        </div>
-                        <div class="stat-card" title="Narrowest point in the airway — critical for breathing">
-                            <span class="stat-label">⚠ Min Diameter</span>
-                            <span class="stat-value" id="stat-min-diam" style="color:#f87171;">—</span>
-                        </div>
-
-                        <!-- Row 3: Stenosis -->
-                        <div class="stat-card" style="grid-column: span 2;" title="Maximum stenosis percentage — how much the airway is narrowed at worst point">
-                            <span class="stat-label">🩺 Max Stenosis</span>
-                            <span class="stat-value" id="stat-stenosis" style="font-size:20px;">—</span>
-                            <div id="stenosis-bar-wrap" style="margin-top:6px; background:rgba(255,255,255,0.07); border-radius:4px; height:6px; overflow:hidden;">
-                                <div id="stenosis-bar" style="height:100%; width:0%; background: linear-gradient(90deg,#34d399,#facc15,#f87171); border-radius:4px; transition: width 0.8s ease;"></div>
-                            </div>
-                        </div>
-                        <div class="stat-card" title="Number of stenotic regions detected by AI">
-                            <span class="stat-label">🔢 Stenotic Zones</span>
-                            <span class="stat-value" id="stat-anomalies">—</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">⚠️</span> Anomaly Detail
-                    </h3>
-                    <div id="anomaly-list" class="anomaly-list">
-                        <p class="placeholder-text">Load a scan to view anomalies</p>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Center — 3D Viewer -->
-            <section class="viewer-container" id="viewer-container">
-                <canvas id="viewer-canvas"></canvas>
-                
-                <!-- Dashboard Overlay -->
-                <div id="dashboard-overlay" class="dashboard-overlay">
-                    <div class="dashboard-header">
-                        <h2 class="dashboard-title">Clinical Patient Portfolio</h2>
-                        <p class="dashboard-subtitle">Total Processed: <span id="dash-total-count">0</span> | AI Detected Stenosis: <span id="dash-stenosis-count">0</span></p>
-                    </div>
-                    <div id="patient-grid" class="patient-grid">
-                        <!-- Patient cards injected here -->
-                    </div>
-                </div>
-
-                <div class="viewer-overlay-top">
-                    <div class="viewer-info" id="viewer-info">
-                        <span>Drag to rotate · Scroll to zoom · Right-click to pan</span>
-                    </div>
-                </div>
-                <div class="viewer-overlay-bottom">
-                    <div class="axis-indicator" id="axis-indicator">
-                        <span class="axis-x">X</span>
-                        <span class="axis-y">Y</span>
-                        <span class="axis-z">Z</span>
-                    </div>
-                </div>
-                <!-- Empty state -->
-                <div class="empty-state" id="empty-state">
-                    <div class="empty-icon">🫁</div>
-                    <h2>No Scan Loaded</h2>
-                    <p>Select a processed scan from the dropdown above, or process a new DICOM/NIfTI file.</p>
-                </div>
-            </section>
-
-                <div class="panel-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">🔬</span> Analysis View
-                    </h3>
-                    <div class="slice-viewer-tabs">
-                        <button class="slice-tab active" data-view="ct">CT Slices</button>
-                        <button class="slice-tab" data-view="report">Clinical Report</button>
-                    </div>
-                    
-                    <div id="ct-view-container">
-                        <div class="slice-display">
-                            <canvas id="slice-canvas" width="256" height="256"></canvas>
-                        </div>
-                        <div class="slice-controls">
-                            <input type="range" id="slice-slider" class="slider" min="0" max="100" value="50">
-                            <span class="slice-label" id="slice-label">Slice 50 / 100</span>
-                        </div>
-                        
-                        <div style="display:flex; gap:4px; margin-top:12px;">
-                            <button class="toggle-btn active" data-axis="axial" style="flex:1; font-size:10px;">Axial</button>
-                            <button class="toggle-btn" data-axis="coronal" style="flex:1; font-size:10px;">Coronal</button>
-                            <button class="toggle-btn" data-axis="sagittal" style="flex:1; font-size:10px;">Sagittal</button>
-                        </div>
-                    </div>
-
-                    <div id="report-view-container" class="hidden" style="background:var(--bg-card); border-radius:var(--radius-md); padding:16px; font-size:12px; color:var(--text-secondary); line-height:1.6;">
-                        <h4 style="color:var(--text-primary); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-                            📋 Automated Findings
-                        </h4>
-                        <div id="report-content">
-                            <!-- Report content injected here -->
-                            No scan loaded.
-                        </div>
-                        <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:16px; border-style:dashed;">
-                            📥 Export PDF Report
-                        </button>
-                    </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3 class="section-title">
-                        <span class="section-icon">📊</span> Cross-Section Profile
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="profile-chart" width="300" height="180"></canvas>
-                    </div>
-                </div>
-            </aside>
-        </main>
-    </div>
-
-    <!-- Process Modal -->
-    <div id="process-modal" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <h2 class="modal-title">Process New Scan</h2>
-            <div class="form-group">
-                <label class="form-label">Path to DICOM folder or NIfTI file</label>
-                <input type="text" id="input-path" class="form-input" placeholder="/path/to/dicom/folder">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Scan ID (optional)</label>
-                <input type="text" id="input-scan-id" class="form-input" placeholder="Auto-generated if empty">
-            </div>
-            <div class="modal-actions">
-                <button id="btn-cancel-process" class="btn btn-ghost">Cancel</button>
-                <button id="btn-start-process" class="btn btn-accent">Start Processing</button>
-            </div>
-            <div id="process-status" class="process-status hidden">
-                <div class="process-spinner"></div>
-                <span id="process-status-text">Processing...</span>
-            </div>
+    <!-- Initialization Screen -->
+    <div id="loading-screen" style="position:fixed; inset:0; background:var(--obsidian); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 1s;">
+        <div style="font-size:48px; margin-bottom:20px;">🫁</div>
+        <div style="font-size:12px; letter-spacing:4px; font-weight:800; color:var(--clinical-blue);">INITIALIZING TRACHEA.AI CORE</div>
+        <div style="width:200px; height:2px; background:rgba(255,255,255,0.1); margin-top:20px; border-radius:2px; overflow:hidden;">
+            <div id="loader-bar" style="width:0%; height:100%; background:var(--clinical-blue); transition: width 0.3s;"></div>
         </div>
     </div>
 
-    <!-- nnU-Net Predict Modal -->
-    <div id="nnunet-modal" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content" style="width:500px;">
-            <h2 class="modal-title" style="background:linear-gradient(135deg,#a78bfa,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">🧠 nnU-Net AI Prediction</h2>
-            <p style="font-size:13px; color:#9ca3af; margin-bottom:18px; line-height:1.5;">
-                Automatically segment the trachea from a raw CT scan using the trained nnU-Net model, then run the full analysis pipeline.
-            </p>
-
-            <div class="form-group">
-                <label class="form-label">CT Scan Path (.nii.gz)</label>
-                <input type="text" id="nnunet-ct-path" class="form-input" placeholder="/path/to/patient_ct.nii.gz">
-                <p style="font-size:11px; color:#6b7280; margin-top:4px;">Full path to the CT NIfTI file on your computer</p>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Scan ID (name in viewer)</label>
-                <input type="text" id="nnunet-scan-id" class="form-input" placeholder="Patient_001">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Model Fold</label>
-                <select id="nnunet-fold" class="form-input" style="cursor:pointer;">
-                    <option value="0">Fold 0 (default)</option>
-                    <option value="1">Fold 1</option>
-                    <option value="2">Fold 2</option>
-                    <option value="3">Fold 3</option>
-                    <option value="4">Fold 4</option>
-                    <option value="all">All folds (ensemble — most accurate)</option>
-                </select>
-            </div>
-
-            <!-- Status / progress -->
-            <div id="nnunet-status-box" style="display:none; margin-bottom:14px; padding:12px 14px; border-radius:8px; background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.25);">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="process-spinner" style="border-top-color:#a78bfa;"></div>
-                    <span id="nnunet-status-text" style="font-size:13px; color:#a78bfa;">Starting prediction…</span>
-                </div>
-                <div style="margin-top:8px; background:rgba(255,255,255,0.07); border-radius:4px; height:4px;">
-                    <div id="nnunet-progress-bar" style="height:100%; width:10%; background:linear-gradient(90deg,#a78bfa,#818cf8); border-radius:4px; transition:width 0.5s ease;"></div>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button id="btn-cancel-nnunet" class="btn btn-ghost">Cancel</button>
-                <button id="btn-start-nnunet" class="btn btn-accent" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Run nnU-Net</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
     <script type="importmap">
     {
         "imports": {
@@ -394,9 +162,8 @@
         }
     }
     </script>
-    <script src="/api/config"></script>
     <script type="module" src="js/viewer3d.js"></script>
-    <script type="module" src="js/sliceViewer.js?v=9"></script>
-    <script type="module" src="js/app.js?v=9"></script>
+    <script type="module" src="js/sliceViewer.js?v=11"></script>
+    <script type="module" src="js/app.js?v=11"></script>
 </body>
 </html>
