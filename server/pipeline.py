@@ -82,22 +82,23 @@ class Pipeline:
             color=(0.2, 0.85, 0.5),
         )
 
-        # Context meshes (aorta, pulmonary artery, heart, body)
+        # Context meshes (aorta, pulmonary_artery, heart, body)
         context_meshes = {}
         for organ in ["aorta", "pulmonary_artery", "heart", "body"]:
             if f"{organ}_mask" in seg_result:
-                print(f"  Generating {organ} mesh...")
-                # Body mesh doesn't need as much smoothing, but we decimate it heavily
-                sigma = 1.0 if organ == "body" else 1.5
-                mesh = self.mesh_gen.mask_to_mesh(seg_result[f"{organ}_mask"], smooth_sigma=sigma)
-                
+                print(f"  Generating {organ} mesh (optimized)...")
+                # Body mesh needs heavy decimation for web performance
+                ratio = 0.05 if organ == "body" else 0.15
+                self.mesh_gen.decimate_ratio = ratio
+                mesh = self.mesh_gen.mask_to_mesh(seg_result[f"{organ}_mask"], smooth_sigma=1.0)
+
                 colors = {
                     "aorta": (0.8, 0.1, 0.1),
                     "pulmonary_artery": (0.1, 0.1, 0.8),
                     "heart": (0.6, 0.2, 0.2),
                     "body": (0.9, 0.8, 0.7)
                 }
-                
+
                 glb_path = os.path.join(meshes_dir, f"{organ}.glb")
                 self.mesh_gen.export_glb(mesh, glb_path, color=colors[organ])
                 context_meshes[organ] = f"meshes/{organ}.glb"

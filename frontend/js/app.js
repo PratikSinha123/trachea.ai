@@ -162,14 +162,12 @@ async function loadScan(scanId) {
         const metaRes = await fetch(`${API_BASE}/api/scan/${scanId}`);
         const meta = await metaRes.json();
 
+        // 1. Critical Path: Load only the trachea meshes initially
         await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/diseased`, "diseased");
         await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/healthy`, "healthy");
 
-        const contextLayers = ["body", "heart", "aorta", "pulmonary_artery"];
-        for (const layer of contextLayers) {
-            try { await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/${layer}`, layer); } catch (e) {}
-        }
-
+        // 2. Non-critical: Delay context meshes and morph frames
+        // These will be loaded on-demand or with a slight delay
         updateStats(meta.stats || {});
         updateAnomalies(meta.anomalies || []);
         window._lastCrossSections = meta.cross_sections || [];
@@ -181,10 +179,28 @@ async function loadScan(scanId) {
         sliceSlider.value = Math.floor(dims.axial / 2);
         sliceLabel.textContent = `Slice ${sliceSlider.value} / ${dims.axial}`;
 
-        if (viewer3d && document.getElementById("annotation-toggle")?.checked) {
-            viewer3d.addStenosisAnnotations(meta.cross_sections);
-        }
     } catch (err) { console.error(err); }
+}
+
+// Helper to load context meshes on-demand
+async function ensureContextLoaded(layer) {
+    if (!currentScan || viewer3d.contextMeshes[layer]) return;
+    try {
+        await viewer3d.loadMesh(`${API_BASE}/api/scan/${currentScan}/mesh/${layer}`, layer);
+    } catch (e) { console.warn(`Failed to lazy-load ${layer}`); }
+}
+
+// Helper to load morph frames on-demand
+async function ensureMorphLoaded() {
+    if (!currentScan || viewer3d.morphMeshes.length > 0) return;
+    try {
+        const morphRes = await fetch(`${API_BASE}/api/scan/${currentScan}/morph_count`);
+        const { count } = await morphRes.json();
+        viewer3d.morphMeshes = new Array(count).fill(null);
+        for (let i = 0; i < count; i++) {
+            await viewer3d.loadMorphFrame(`${API_BASE}/api/scan/${currentScan}/morph/${i}`, i);
+        }
+    } catch (e) { console.warn("Failed to load morph frames"); }
 }
 
 async function checkServer() {
@@ -259,19 +275,35 @@ function setupEvents() {
     scanSelect.addEventListener("change", (e) => loadScan(e.target.value));
 
     displayBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
             displayBtns.forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
-            viewer3d.setDisplayMode(btn.dataset.mode);
-            morphControls.style.display = btn.dataset.mode === "morph" ? "block" : "none";
+            const mode = btn.dataset.mode;
+            
+            if (mode === "morph") {
+                await ensureMorphLoaded();
+            }
+            
+            viewer3d.setDisplayMode(mode);
         });
     });
 
     opacitySlider.addEventListener("input", (e) => viewer3d.setOpacity(e.target.value / 100));
-    document.getElementById("wireframe-toggle").addEventListener("change", (e) => viewer3d.setWireframe(e.target.checked));
     
     document.querySelectorAll(".context-toggle").forEach(t => {
-        t.addEventListener("change", (e) => viewer3d.setContextVisibility(e.target.dataset.layer, e.target.checked));
+        t.addEventListener("change", async (e) => {
+            const layer = e.target.dataset.layer;
+            if (e.target.checked) {
+                // If it's vessels, we might need to load both aorta and pulmonary_artery
+                if (layer === "vessels") {
+                    await ensureContextLoaded("aorta");
+                    await ensureContextLoaded("pulmonary_artery");
+                } else {
+                    await ensureContextLoaded(layer);
+                }
+            }
+            viewer3d.setContextVisibility(layer, e.target.checked);
+        });
     });
 
     // View switching
