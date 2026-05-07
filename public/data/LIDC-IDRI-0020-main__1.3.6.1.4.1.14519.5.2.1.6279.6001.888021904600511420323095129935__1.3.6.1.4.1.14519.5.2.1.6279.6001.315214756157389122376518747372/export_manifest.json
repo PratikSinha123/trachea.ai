@@ -1,0 +1,786 @@
+{
+  "scan_id": "LIDC-IDRI-0020-main__1.3.6.1.4.1.14519.5.2.1.6279.6001.888021904600511420323095129935__1.3.6.1.4.1.14519.5.2.1.6279.6001.315214756157389122376518747372",
+  "has_meshes": true,
+  "has_slices": true,
+  "dimensions": {
+    "axial": 225,
+    "coronal": 512,
+    "sagittal": 512
+  },
+  "slice_manifest": {
+    "axial": [
+      {
+        "index": 0,
+        "file": "slices/axial/0000.png"
+      },
+      {
+        "index": 3,
+        "file": "slices/axial/0003.png"
+      },
+      {
+        "index": 7,
+        "file": "slices/axial/0007.png"
+      },
+      {
+        "index": 10,
+        "file": "slices/axial/0010.png"
+      },
+      {
+        "index": 14,
+        "file": "slices/axial/0014.png"
+      },
+      {
+        "index": 17,
+        "file": "slices/axial/0017.png"
+      },
+      {
+        "index": 21,
+        "file": "slices/axial/0021.png"
+      },
+      {
+        "index": 24,
+        "file": "slices/axial/0024.png"
+      },
+      {
+        "index": 28,
+        "file": "slices/axial/0028.png"
+      },
+      {
+        "index": 31,
+        "file": "slices/axial/0031.png"
+      },
+      {
+        "index": 35,
+        "file": "slices/axial/0035.png"
+      },
+      {
+        "index": 38,
+        "file": "slices/axial/0038.png"
+      },
+      {
+        "index": 42,
+        "file": "slices/axial/0042.png"
+      },
+      {
+        "index": 45,
+        "file": "slices/axial/0045.png"
+      },
+      {
+        "index": 49,
+        "file": "slices/axial/0049.png"
+      },
+      {
+        "index": 52,
+        "file": "slices/axial/0052.png"
+      },
+      {
+        "index": 56,
+        "file": "slices/axial/0056.png"
+      },
+      {
+        "index": 59,
+        "file": "slices/axial/0059.png"
+      },
+      {
+        "index": 63,
+        "file": "slices/axial/0063.png"
+      },
+      {
+        "index": 66,
+        "file": "slices/axial/0066.png"
+      },
+      {
+        "index": 70,
+        "file": "slices/axial/0070.png"
+      },
+      {
+        "index": 73,
+        "file": "slices/axial/0073.png"
+      },
+      {
+        "index": 77,
+        "file": "slices/axial/0077.png"
+      },
+      {
+        "index": 80,
+        "file": "slices/axial/0080.png"
+      },
+      {
+        "index": 84,
+        "file": "slices/axial/0084.png"
+      },
+      {
+        "index": 87,
+        "file": "slices/axial/0087.png"
+      },
+      {
+        "index": 91,
+        "file": "slices/axial/0091.png"
+      },
+      {
+        "index": 94,
+        "file": "slices/axial/0094.png"
+      },
+      {
+        "index": 98,
+        "file": "slices/axial/0098.png"
+      },
+      {
+        "index": 101,
+        "file": "slices/axial/0101.png"
+      },
+      {
+        "index": 105,
+        "file": "slices/axial/0105.png"
+      },
+      {
+        "index": 108,
+        "file": "slices/axial/0108.png"
+      },
+      {
+        "index": 112,
+        "file": "slices/axial/0112.png"
+      },
+      {
+        "index": 116,
+        "file": "slices/axial/0116.png"
+      },
+      {
+        "index": 119,
+        "file": "slices/axial/0119.png"
+      },
+      {
+        "index": 123,
+        "file": "slices/axial/0123.png"
+      },
+      {
+        "index": 126,
+        "file": "slices/axial/0126.png"
+      },
+      {
+        "index": 130,
+        "file": "slices/axial/0130.png"
+      },
+      {
+        "index": 133,
+        "file": "slices/axial/0133.png"
+      },
+      {
+        "index": 137,
+        "file": "slices/axial/0137.png"
+      },
+      {
+        "index": 140,
+        "file": "slices/axial/0140.png"
+      },
+      {
+        "index": 144,
+        "file": "slices/axial/0144.png"
+      },
+      {
+        "index": 147,
+        "file": "slices/axial/0147.png"
+      },
+      {
+        "index": 151,
+        "file": "slices/axial/0151.png"
+      },
+      {
+        "index": 154,
+        "file": "slices/axial/0154.png"
+      },
+      {
+        "index": 158,
+        "file": "slices/axial/0158.png"
+      },
+      {
+        "index": 161,
+        "file": "slices/axial/0161.png"
+      },
+      {
+        "index": 165,
+        "file": "slices/axial/0165.png"
+      },
+      {
+        "index": 168,
+        "file": "slices/axial/0168.png"
+      },
+      {
+        "index": 172,
+        "file": "slices/axial/0172.png"
+      },
+      {
+        "index": 175,
+        "file": "slices/axial/0175.png"
+      },
+      {
+        "index": 179,
+        "file": "slices/axial/0179.png"
+      },
+      {
+        "index": 182,
+        "file": "slices/axial/0182.png"
+      },
+      {
+        "index": 186,
+        "file": "slices/axial/0186.png"
+      },
+      {
+        "index": 189,
+        "file": "slices/axial/0189.png"
+      },
+      {
+        "index": 193,
+        "file": "slices/axial/0193.png"
+      },
+      {
+        "index": 196,
+        "file": "slices/axial/0196.png"
+      },
+      {
+        "index": 200,
+        "file": "slices/axial/0200.png"
+      },
+      {
+        "index": 203,
+        "file": "slices/axial/0203.png"
+      },
+      {
+        "index": 207,
+        "file": "slices/axial/0207.png"
+      },
+      {
+        "index": 210,
+        "file": "slices/axial/0210.png"
+      },
+      {
+        "index": 214,
+        "file": "slices/axial/0214.png"
+      },
+      {
+        "index": 217,
+        "file": "slices/axial/0217.png"
+      },
+      {
+        "index": 221,
+        "file": "slices/axial/0221.png"
+      }
+    ],
+    "coronal": [
+      {
+        "index": 0,
+        "file": "slices/coronal/0000.png"
+      },
+      {
+        "index": 8,
+        "file": "slices/coronal/0008.png"
+      },
+      {
+        "index": 16,
+        "file": "slices/coronal/0016.png"
+      },
+      {
+        "index": 24,
+        "file": "slices/coronal/0024.png"
+      },
+      {
+        "index": 32,
+        "file": "slices/coronal/0032.png"
+      },
+      {
+        "index": 40,
+        "file": "slices/coronal/0040.png"
+      },
+      {
+        "index": 48,
+        "file": "slices/coronal/0048.png"
+      },
+      {
+        "index": 56,
+        "file": "slices/coronal/0056.png"
+      },
+      {
+        "index": 64,
+        "file": "slices/coronal/0064.png"
+      },
+      {
+        "index": 72,
+        "file": "slices/coronal/0072.png"
+      },
+      {
+        "index": 80,
+        "file": "slices/coronal/0080.png"
+      },
+      {
+        "index": 88,
+        "file": "slices/coronal/0088.png"
+      },
+      {
+        "index": 96,
+        "file": "slices/coronal/0096.png"
+      },
+      {
+        "index": 104,
+        "file": "slices/coronal/0104.png"
+      },
+      {
+        "index": 112,
+        "file": "slices/coronal/0112.png"
+      },
+      {
+        "index": 120,
+        "file": "slices/coronal/0120.png"
+      },
+      {
+        "index": 128,
+        "file": "slices/coronal/0128.png"
+      },
+      {
+        "index": 136,
+        "file": "slices/coronal/0136.png"
+      },
+      {
+        "index": 144,
+        "file": "slices/coronal/0144.png"
+      },
+      {
+        "index": 152,
+        "file": "slices/coronal/0152.png"
+      },
+      {
+        "index": 160,
+        "file": "slices/coronal/0160.png"
+      },
+      {
+        "index": 168,
+        "file": "slices/coronal/0168.png"
+      },
+      {
+        "index": 176,
+        "file": "slices/coronal/0176.png"
+      },
+      {
+        "index": 184,
+        "file": "slices/coronal/0184.png"
+      },
+      {
+        "index": 192,
+        "file": "slices/coronal/0192.png"
+      },
+      {
+        "index": 200,
+        "file": "slices/coronal/0200.png"
+      },
+      {
+        "index": 208,
+        "file": "slices/coronal/0208.png"
+      },
+      {
+        "index": 216,
+        "file": "slices/coronal/0216.png"
+      },
+      {
+        "index": 224,
+        "file": "slices/coronal/0224.png"
+      },
+      {
+        "index": 232,
+        "file": "slices/coronal/0232.png"
+      },
+      {
+        "index": 240,
+        "file": "slices/coronal/0240.png"
+      },
+      {
+        "index": 248,
+        "file": "slices/coronal/0248.png"
+      },
+      {
+        "index": 256,
+        "file": "slices/coronal/0256.png"
+      },
+      {
+        "index": 264,
+        "file": "slices/coronal/0264.png"
+      },
+      {
+        "index": 272,
+        "file": "slices/coronal/0272.png"
+      },
+      {
+        "index": 280,
+        "file": "slices/coronal/0280.png"
+      },
+      {
+        "index": 288,
+        "file": "slices/coronal/0288.png"
+      },
+      {
+        "index": 296,
+        "file": "slices/coronal/0296.png"
+      },
+      {
+        "index": 304,
+        "file": "slices/coronal/0304.png"
+      },
+      {
+        "index": 312,
+        "file": "slices/coronal/0312.png"
+      },
+      {
+        "index": 320,
+        "file": "slices/coronal/0320.png"
+      },
+      {
+        "index": 328,
+        "file": "slices/coronal/0328.png"
+      },
+      {
+        "index": 336,
+        "file": "slices/coronal/0336.png"
+      },
+      {
+        "index": 344,
+        "file": "slices/coronal/0344.png"
+      },
+      {
+        "index": 352,
+        "file": "slices/coronal/0352.png"
+      },
+      {
+        "index": 360,
+        "file": "slices/coronal/0360.png"
+      },
+      {
+        "index": 368,
+        "file": "slices/coronal/0368.png"
+      },
+      {
+        "index": 376,
+        "file": "slices/coronal/0376.png"
+      },
+      {
+        "index": 384,
+        "file": "slices/coronal/0384.png"
+      },
+      {
+        "index": 392,
+        "file": "slices/coronal/0392.png"
+      },
+      {
+        "index": 400,
+        "file": "slices/coronal/0400.png"
+      },
+      {
+        "index": 408,
+        "file": "slices/coronal/0408.png"
+      },
+      {
+        "index": 416,
+        "file": "slices/coronal/0416.png"
+      },
+      {
+        "index": 424,
+        "file": "slices/coronal/0424.png"
+      },
+      {
+        "index": 432,
+        "file": "slices/coronal/0432.png"
+      },
+      {
+        "index": 440,
+        "file": "slices/coronal/0440.png"
+      },
+      {
+        "index": 448,
+        "file": "slices/coronal/0448.png"
+      },
+      {
+        "index": 456,
+        "file": "slices/coronal/0456.png"
+      },
+      {
+        "index": 464,
+        "file": "slices/coronal/0464.png"
+      },
+      {
+        "index": 472,
+        "file": "slices/coronal/0472.png"
+      },
+      {
+        "index": 480,
+        "file": "slices/coronal/0480.png"
+      },
+      {
+        "index": 488,
+        "file": "slices/coronal/0488.png"
+      },
+      {
+        "index": 496,
+        "file": "slices/coronal/0496.png"
+      },
+      {
+        "index": 504,
+        "file": "slices/coronal/0504.png"
+      }
+    ],
+    "sagittal": [
+      {
+        "index": 0,
+        "file": "slices/sagittal/0000.png"
+      },
+      {
+        "index": 8,
+        "file": "slices/sagittal/0008.png"
+      },
+      {
+        "index": 16,
+        "file": "slices/sagittal/0016.png"
+      },
+      {
+        "index": 24,
+        "file": "slices/sagittal/0024.png"
+      },
+      {
+        "index": 32,
+        "file": "slices/sagittal/0032.png"
+      },
+      {
+        "index": 40,
+        "file": "slices/sagittal/0040.png"
+      },
+      {
+        "index": 48,
+        "file": "slices/sagittal/0048.png"
+      },
+      {
+        "index": 56,
+        "file": "slices/sagittal/0056.png"
+      },
+      {
+        "index": 64,
+        "file": "slices/sagittal/0064.png"
+      },
+      {
+        "index": 72,
+        "file": "slices/sagittal/0072.png"
+      },
+      {
+        "index": 80,
+        "file": "slices/sagittal/0080.png"
+      },
+      {
+        "index": 88,
+        "file": "slices/sagittal/0088.png"
+      },
+      {
+        "index": 96,
+        "file": "slices/sagittal/0096.png"
+      },
+      {
+        "index": 104,
+        "file": "slices/sagittal/0104.png"
+      },
+      {
+        "index": 112,
+        "file": "slices/sagittal/0112.png"
+      },
+      {
+        "index": 120,
+        "file": "slices/sagittal/0120.png"
+      },
+      {
+        "index": 128,
+        "file": "slices/sagittal/0128.png"
+      },
+      {
+        "index": 136,
+        "file": "slices/sagittal/0136.png"
+      },
+      {
+        "index": 144,
+        "file": "slices/sagittal/0144.png"
+      },
+      {
+        "index": 152,
+        "file": "slices/sagittal/0152.png"
+      },
+      {
+        "index": 160,
+        "file": "slices/sagittal/0160.png"
+      },
+      {
+        "index": 168,
+        "file": "slices/sagittal/0168.png"
+      },
+      {
+        "index": 176,
+        "file": "slices/sagittal/0176.png"
+      },
+      {
+        "index": 184,
+        "file": "slices/sagittal/0184.png"
+      },
+      {
+        "index": 192,
+        "file": "slices/sagittal/0192.png"
+      },
+      {
+        "index": 200,
+        "file": "slices/sagittal/0200.png"
+      },
+      {
+        "index": 208,
+        "file": "slices/sagittal/0208.png"
+      },
+      {
+        "index": 216,
+        "file": "slices/sagittal/0216.png"
+      },
+      {
+        "index": 224,
+        "file": "slices/sagittal/0224.png"
+      },
+      {
+        "index": 232,
+        "file": "slices/sagittal/0232.png"
+      },
+      {
+        "index": 240,
+        "file": "slices/sagittal/0240.png"
+      },
+      {
+        "index": 248,
+        "file": "slices/sagittal/0248.png"
+      },
+      {
+        "index": 256,
+        "file": "slices/sagittal/0256.png"
+      },
+      {
+        "index": 264,
+        "file": "slices/sagittal/0264.png"
+      },
+      {
+        "index": 272,
+        "file": "slices/sagittal/0272.png"
+      },
+      {
+        "index": 280,
+        "file": "slices/sagittal/0280.png"
+      },
+      {
+        "index": 288,
+        "file": "slices/sagittal/0288.png"
+      },
+      {
+        "index": 296,
+        "file": "slices/sagittal/0296.png"
+      },
+      {
+        "index": 304,
+        "file": "slices/sagittal/0304.png"
+      },
+      {
+        "index": 312,
+        "file": "slices/sagittal/0312.png"
+      },
+      {
+        "index": 320,
+        "file": "slices/sagittal/0320.png"
+      },
+      {
+        "index": 328,
+        "file": "slices/sagittal/0328.png"
+      },
+      {
+        "index": 336,
+        "file": "slices/sagittal/0336.png"
+      },
+      {
+        "index": 344,
+        "file": "slices/sagittal/0344.png"
+      },
+      {
+        "index": 352,
+        "file": "slices/sagittal/0352.png"
+      },
+      {
+        "index": 360,
+        "file": "slices/sagittal/0360.png"
+      },
+      {
+        "index": 368,
+        "file": "slices/sagittal/0368.png"
+      },
+      {
+        "index": 376,
+        "file": "slices/sagittal/0376.png"
+      },
+      {
+        "index": 384,
+        "file": "slices/sagittal/0384.png"
+      },
+      {
+        "index": 392,
+        "file": "slices/sagittal/0392.png"
+      },
+      {
+        "index": 400,
+        "file": "slices/sagittal/0400.png"
+      },
+      {
+        "index": 408,
+        "file": "slices/sagittal/0408.png"
+      },
+      {
+        "index": 416,
+        "file": "slices/sagittal/0416.png"
+      },
+      {
+        "index": 424,
+        "file": "slices/sagittal/0424.png"
+      },
+      {
+        "index": 432,
+        "file": "slices/sagittal/0432.png"
+      },
+      {
+        "index": 440,
+        "file": "slices/sagittal/0440.png"
+      },
+      {
+        "index": 448,
+        "file": "slices/sagittal/0448.png"
+      },
+      {
+        "index": 456,
+        "file": "slices/sagittal/0456.png"
+      },
+      {
+        "index": 464,
+        "file": "slices/sagittal/0464.png"
+      },
+      {
+        "index": 472,
+        "file": "slices/sagittal/0472.png"
+      },
+      {
+        "index": 480,
+        "file": "slices/sagittal/0480.png"
+      },
+      {
+        "index": 488,
+        "file": "slices/sagittal/0488.png"
+      },
+      {
+        "index": 496,
+        "file": "slices/sagittal/0496.png"
+      },
+      {
+        "index": 504,
+        "file": "slices/sagittal/0504.png"
+      }
+    ]
+  }
+}
