@@ -41,14 +41,18 @@
             </div>
             <div class="top-bar-center">
                 <div class="scan-selector">
+                    <div class="search-container">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="patient-search" class="search-input" placeholder="Search Patients...">
+                    </div>
                     <select id="scan-select" class="scan-dropdown">
                         <option value="">Select a scan...</option>
                     </select>
+                    <button id="btn-dashboard" class="btn btn-ghost" title="View Patient Portfolio">
+                        <span class="btn-icon">📊</span> Dashboard
+                    </button>
                     <button id="btn-process" class="btn btn-accent" title="Process new scan">
                         <span class="btn-icon">⚡</span> Process
-                    </button>
-                    <button id="btn-nnunet-predict" class="btn btn-ghost" title="Run nnU-Net AI prediction on a new CT scan" style="border-color:rgba(167,139,250,0.4); color:#a78bfa;">
-                        <span class="btn-icon">🧠</span> AI Predict
                     </button>
                 </div>
             </div>
@@ -226,6 +230,18 @@
             <!-- Center — 3D Viewer -->
             <section class="viewer-container" id="viewer-container">
                 <canvas id="viewer-canvas"></canvas>
+                
+                <!-- Dashboard Overlay -->
+                <div id="dashboard-overlay" class="dashboard-overlay">
+                    <div class="dashboard-header">
+                        <h2 class="dashboard-title">Clinical Patient Portfolio</h2>
+                        <p class="dashboard-subtitle">Total Processed: <span id="dash-total-count">0</span> | AI Detected Stenosis: <span id="dash-stenosis-count">0</span></p>
+                    </div>
+                    <div id="patient-grid" class="patient-grid">
+                        <!-- Patient cards injected here -->
+                    </div>
+                </div>
+
                 <div class="viewer-overlay-top">
                     <div class="viewer-info" id="viewer-info">
                         <span>Drag to rotate · Scroll to zoom · Right-click to pan</span>
@@ -246,23 +262,42 @@
                 </div>
             </section>
 
-            <!-- Right Panel — Slice Viewer -->
-            <aside class="panel panel-right" id="panel-right">
                 <div class="panel-section">
                     <h3 class="section-title">
-                        <span class="section-icon">🔬</span> CT Slices
+                        <span class="section-icon">🔬</span> Analysis View
                     </h3>
                     <div class="slice-viewer-tabs">
-                        <button class="slice-tab active" data-axis="axial">Axial</button>
-                        <button class="slice-tab" data-axis="coronal">Coronal</button>
-                        <button class="slice-tab" data-axis="sagittal">Sagittal</button>
+                        <button class="slice-tab active" data-view="ct">CT Slices</button>
+                        <button class="slice-tab" data-view="report">Clinical Report</button>
                     </div>
-                    <div class="slice-display">
-                        <canvas id="slice-canvas" width="256" height="256"></canvas>
+                    
+                    <div id="ct-view-container">
+                        <div class="slice-display">
+                            <canvas id="slice-canvas" width="256" height="256"></canvas>
+                        </div>
+                        <div class="slice-controls">
+                            <input type="range" id="slice-slider" class="slider" min="0" max="100" value="50">
+                            <span class="slice-label" id="slice-label">Slice 50 / 100</span>
+                        </div>
+                        
+                        <div style="display:flex; gap:4px; margin-top:12px;">
+                            <button class="toggle-btn active" data-axis="axial" style="flex:1; font-size:10px;">Axial</button>
+                            <button class="toggle-btn" data-axis="coronal" style="flex:1; font-size:10px;">Coronal</button>
+                            <button class="toggle-btn" data-axis="sagittal" style="flex:1; font-size:10px;">Sagittal</button>
+                        </div>
                     </div>
-                    <div class="slice-controls">
-                        <input type="range" id="slice-slider" class="slider" min="0" max="100" value="50">
-                        <span class="slice-label" id="slice-label">Slice 50 / 100</span>
+
+                    <div id="report-view-container" class="hidden" style="background:var(--bg-card); border-radius:var(--radius-md); padding:16px; font-size:12px; color:var(--text-secondary); line-height:1.6;">
+                        <h4 style="color:var(--text-primary); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                            📋 Automated Findings
+                        </h4>
+                        <div id="report-content">
+                            <!-- Report content injected here -->
+                            No scan loaded.
+                        </div>
+                        <button class="btn btn-ghost btn-sm" style="width:100%; margin-top:16px; border-style:dashed;">
+                            📥 Export PDF Report
+                        </button>
                     </div>
                 </div>
 

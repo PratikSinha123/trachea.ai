@@ -45,16 +45,17 @@ class TracheaShapeModel:
 
         return True
 
-    def detect_anomalies(self, sensitivity=1.5):
+    def detect_anomalies(self, sensitivity=2.2):
         """Detect anomalous cross-sections that deviate from expected shape.
-
-        Returns indices of anomalous slices and anomaly descriptions.
+        
+        Clinical adjustment: Only flag stenosis if deviation is > 15% and 
+        significantly below the standard deviation.
         """
         if self.diameters is None or len(self.diameters) < 5:
             return [], []
 
         # Smooth the diameter profile to get expected trend
-        smooth_d = gaussian_filter1d(self.diameters, sigma=5)
+        smooth_d = gaussian_filter1d(self.diameters, sigma=8)
 
         # Calculate residuals
         residuals = self.diameters - smooth_d
@@ -64,10 +65,12 @@ class TracheaShapeModel:
         descriptions = []
 
         for i, (d, sd, r) in enumerate(zip(self.diameters, smooth_d, residuals)):
-            if abs(r) > sensitivity * std:
+            severity = abs(r) / sd * 100
+            
+            # Clinical Threshold: 15% narrowing is the minimum for "mild stenosis"
+            if abs(r) > sensitivity * std and severity > 15.0:
                 anomalies.append(i)
                 if r < 0:
-                    severity = abs(r) / sd * 100
                     descriptions.append({
                         "index": i,
                         "z_mm": float(self.z_coords[i]),
@@ -77,15 +80,16 @@ class TracheaShapeModel:
                         "deviation_pct": float(severity),
                     })
                 else:
-                    severity = r / sd * 100
-                    descriptions.append({
-                        "index": i,
-                        "z_mm": float(self.z_coords[i]),
-                        "type": "dilation",
-                        "observed_mm": float(d),
-                        "expected_mm": float(sd),
-                        "deviation_pct": float(severity),
-                    })
+                    # Dilation is less critical, use higher threshold
+                    if severity > 20.0:
+                        descriptions.append({
+                            "index": i,
+                            "z_mm": float(self.z_coords[i]),
+                            "type": "dilation",
+                            "observed_mm": float(d),
+                            "expected_mm": float(sd),
+                            "deviation_pct": float(severity),
+                        })
 
         return anomalies, descriptions
 
