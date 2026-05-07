@@ -54,10 +54,22 @@ async function init() {
 
 // ─── Data Management ────────────────────────────────────────
 async function loadScanList() {
+    console.log("📡 Fetching patient manifest...");
     try {
-        const res = await fetch(`${API_BASE}/api/scans`);
-        if (!res.ok) throw new Error("Failed to fetch scan manifest");
+        // Primary: Serverless API
+        let res = await fetch(`${API_BASE}/api/scans`);
         allScans = await res.json();
+
+        // Fail-safe: If API returns empty but we're on Vercel, fetch static JSON directly
+        if ((!allScans || allScans.length === 0) && window.location.hostname.includes('vercel')) {
+            console.log("🔄 API returned empty. Retrying with direct static fetch...");
+            res = await fetch(`${window.location.origin}/data/scans.json`);
+            if (res.ok) allScans = await res.json();
+        }
+
+        if (!allScans || allScans.length === 0) {
+            console.warn("⚠️ No patient records found in either API or Static storage.");
+        }
 
         renderPatientGrid(allScans);
         
@@ -68,7 +80,7 @@ async function loadScanList() {
         if (stenEl) stenEl.textContent = allScans.filter(s => (s.stats?.max_stenosis_pct || 0) > 20).length;
 
     } catch (err) {
-        console.warn("⚠️ Data Sync Warning:", err);
+        console.error("❌ Critical Data Error:", err);
     }
 }
 
