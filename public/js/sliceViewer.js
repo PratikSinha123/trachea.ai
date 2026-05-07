@@ -44,18 +44,10 @@ export class SliceViewer {
     async loadSlice() {
         if (!this.scanId) return;
 
-        // On Vercel, prefer the static pre-rendered slices (much faster)
-        const staticUrl = `${this.apiBase}/data/${this.scanId}/slices/${this.axis}/${this.currentIndex.toString().padStart(4, "0")}.png`;
-        const apiUrl = `${this.apiBase}/api/scan/${this.scanId}/slice/${this.axis}/${this.currentIndex}`;
+        const url = `${this.apiBase}/api/scan/${this.scanId}/slice/${this.axis}/${this.currentIndex}`;
 
         try {
-            // Try static first
-            let response = await fetch(staticUrl);
-            if (!response.ok) {
-                // Fallback to API
-                response = await fetch(apiUrl);
-            }
-
+            const response = await fetch(url);
             if (!response.ok) {
                 this._drawPlaceholder("Slice not available");
                 return;
