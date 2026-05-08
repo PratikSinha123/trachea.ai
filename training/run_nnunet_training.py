@@ -167,8 +167,8 @@ def main():
             "-tr", args.trainer,
             "--npz",                    # save softmax outputs (needed for ensemble)
         ]
-        if args.epochs != 1000:        # nnUNet default is 1000; override if different
-            train_cmd += ["-num_epochs_per_val", "1"]  # validate every epoch (quick runs)
+        # Note: nnU-Net v2 does not support -num_epochs_per_val or easy epoch overrides via CLI.
+        # It defaults to 1000 epochs. To run fewer epochs, a custom trainer is required.
 
         # For MPS/CPU — disable AMP (Automatic Mixed Precision, CUDA-only)
         if device != "cuda":

@@ -191,7 +191,11 @@ def run_totalsegmentator(ct_gz: str, out_dir: str, device: str = "cpu") -> str |
         "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",  # Don't cache MPS memory
     }
 
-    result = subprocess.run(cmd, capture_output=True, text=True, env=ts_env)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, env=ts_env)
+    except Exception as e:
+        warn(f"TotalSegmentator crashed: {e}")
+        return None
     trachea_out = os.path.join(out_dir, "trachea.nii.gz")
     if os.path.isfile(trachea_out):
         return trachea_out
