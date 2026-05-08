@@ -183,7 +183,7 @@ async function loadScan(scanId) {
             }
         }
 
-        updateMetrics(meta.stats || {});
+        updateMetrics(meta.stats || {}, meta.anomalies || []);
         statusText.textContent = `ANALYSIS COMPLETE: ${scanId.split('__')[0]}`;
         
         // Update 2D Slice Viewer
@@ -200,44 +200,77 @@ async function loadScan(scanId) {
 }
 
 // ─── UI Orchestration ───────────────────────────────────────
-function updateMetrics(stats) {
+function updateMetrics(stats, anomalies = []) {
     if (!stats) return;
     const maxS = stats.max_stenosis_pct || 0;
     
+    // 1. Calculate Cotton-Myer Grade (Pediatric & Adult Standard)
+    let cottonMyer = "N/A";
+    if (maxS > 0 && maxS <= 50) cottonMyer = "Grade I";
+    else if (maxS > 50 && maxS <= 70) cottonMyer = "Grade II";
+    else if (maxS > 70 && maxS <= 99) cottonMyer = "Grade III";
+    else if (maxS > 99) cottonMyer = "Grade IV";
+    else if (maxS === 0) cottonMyer = "Normal";
+
+    // 2. Calculate Obstruction Length (Z-range of significant deviation)
+    let obsLength = 0;
+    const stenoticPoints = (anomalies || []).filter(a => a.type === "stenosis" && a.deviation_pct > 15);
+    if (stenoticPoints.length > 1) {
+        const zValues = stenoticPoints.map(p => p.z_mm);
+        obsLength = Math.max(...zValues) - Math.min(...zValues);
+    } else if (stenoticPoints.length === 1) {
+        obsLength = 1.0; // Minimal focal point
+    }
+
+    // 3. Estimate Reference Diameter (Expected normal anatomy at lesion site)
+    let refDiam = stats.mean_healthy_diameter_mm || 0;
+    if (anomalies && anomalies.length > 0) {
+        const maxStenPoint = anomalies.reduce((prev, curr) => (curr.deviation_pct > prev.deviation_pct) ? curr : prev, { deviation_pct: -1 });
+        if (maxStenPoint.expected_mm) refDiam = maxStenPoint.expected_mm;
+    }
+
     const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
     };
 
-    setVal("stat-vol-diseased", `${(stats.volume_diseased_cm3 || 0).toFixed(1)} cm³`);
+    setVal("stat-vol-diseased", `${(stats.volume_diseased_cm3 || stats.diseased_volume_mm3 / 1000 || 0).toFixed(1)} cm³`);
     setVal("stat-stenosis", `${maxS.toFixed(1)}%`);
-    setVal("stat-min-diam", `${(stats.min_diameter_mm || 0).toFixed(1)} mm`);
+    setVal("stat-min-diam", `${(stats.min_diameter_mm || stats.min_diseased_diameter_mm || 0).toFixed(1)} mm`);
+    setVal("stat-cotton-myer", cottonMyer);
+    setVal("stat-obs-length", `${obsLength.toFixed(1)} mm`);
+    setVal("stat-ref-diam", `${refDiam.toFixed(1)} mm`);
 
     const badge = document.getElementById("severity-badge");
     const label = document.getElementById("severity-label");
     if (badge && label) {
-        if (maxS > 40) {
-            label.textContent = "CRITICAL STENOSIS";
-            badge.style.background = "rgba(239, 68, 68, 0.1)";
+        if (maxS > 70) {
+            label.textContent = "CRITICAL OBSTRUCTION";
+            badge.style.background = "rgba(239, 68, 68, 0.15)";
             badge.style.color = "var(--accent-red)";
-            badge.style.borderColor = "rgba(239, 68, 68, 0.2)";
-        } else if (maxS > 15) {
-            label.textContent = "MODERATE OBSTRUCTION";
-            badge.style.background = "rgba(245, 158, 11, 0.1)";
+            badge.style.borderColor = "rgba(239, 68, 68, 0.4)";
+        } else if (maxS > 30) {
+            label.textContent = "MODERATE STENOSIS";
+            badge.style.background = "rgba(245, 158, 11, 0.15)";
             badge.style.color = "var(--accent-yellow)";
-            badge.style.borderColor = "rgba(245, 158, 11, 0.2)";
+            badge.style.borderColor = "rgba(245, 158, 11, 0.4)";
+        } else if (maxS > 10) {
+            label.textContent = "MILD DEVIATION";
+            badge.style.background = "rgba(59, 130, 246, 0.15)";
+            badge.style.color = "var(--accent-blue)";
+            badge.style.borderColor = "rgba(59, 130, 246, 0.4)";
         } else {
             label.textContent = "NORMAL ANATOMY";
-            badge.style.background = "rgba(16, 185, 129, 0.1)";
+            badge.style.background = "rgba(16, 185, 129, 0.15)";
             badge.style.color = "var(--accent-green)";
-            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+            badge.style.borderColor = "rgba(16, 185, 129, 0.4)";
         }
     }
 
-    renderClinicalReport(stats);
+    renderClinicalReport(stats, cottonMyer, obsLength);
 }
 
-function renderClinicalReport(stats) {
+function renderClinicalReport(stats, cottonMyer, obsLength) {
     const container = document.getElementById("report-content");
     if (!container) return;
     
@@ -245,14 +278,32 @@ function renderClinicalReport(stats) {
     const date = new Date().toLocaleDateString();
 
     container.innerHTML = `
-        <div style="font-family:var(--font-mono); font-size:11px; margin-bottom:12px; color:var(--text-dim);">
-            REPORT DATE: ${date}
+        <div style="font-family:var(--font-mono); font-size:10px; margin-bottom:16px; color:var(--text-dim); text-align:right;">
+            DOCUMENT ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()} // DATE: ${date}
         </div>
-        <p style="margin-bottom:12px;"><strong>Automated Morphological Assessment:</strong></p>
-        <p style="margin-bottom:8px;">The AI pipeline detected a maximal luminal narrowing of <strong>${maxS.toFixed(1)}%</strong>.</p>
-        <p style="margin-bottom:8px;">Total airway volume is measured at <strong>${(stats.volume_diseased_cm3 || 0).toFixed(1)} cm³</strong> compared to a predicted healthy volume of <strong>${(stats.volume_healthy_cm3 || 0).toFixed(1)} cm³</strong>.</p>
-        <p style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px; color:var(--text-muted); font-style:italic;">
-            Note: This report is generated by an experimental AI system and should be verified by a board-certified radiologist.
+        <div style="border-left: 3px solid var(--accent-blue); padding-left: 16px; margin-bottom: 24px;">
+            <p style="font-weight: 800; font-size: 11px; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 4px;">Assessment Summary</p>
+            <p>Automated analysis of the tracheal lumen indicates a <strong>${maxS.toFixed(1)}%</strong> reduction in cross-sectional area at the point of maximal narrowing.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: 700; margin-bottom: 8px;">Clinical Classification:</p>
+            <ul style="padding-left: 20px; list-style-type: square;">
+                <li><strong>Cotton-Myer Scale:</strong> ${cottonMyer}</li>
+                <li><strong>Morphological Type:</strong> ${obsLength > 20 ? 'Diffuse' : 'Focal'} Narrowing</li>
+                <li><strong>Craniocaudal Extent:</strong> ${obsLength.toFixed(1)} mm</li>
+            </ul>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: 700; margin-bottom: 8px;">Volumetric Findings:</p>
+            <p>Total airway volume: <strong>${(stats.volume_diseased_cm3 || stats.diseased_volume_mm3 / 1000 || 0).toFixed(1)} cm³</strong></p>
+            <p>Predicted physiological volume: <strong>${(stats.volume_healthy_cm3 || stats.healthy_volume_mm3 / 1000 || 0).toFixed(1)} cm³</strong></p>
+            <p>Net volume deficit: <strong>${(stats.volume_change_pct || 0).toFixed(1)}%</strong></p>
+        </div>
+        
+        <p style="margin-top:24px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px; color:var(--text-dim); font-style:italic; font-size:11px;">
+            DISCLAIMER: This report is an AI-generated pedagogical tool for medical students. It does not constitute a certified medical diagnosis and must be reviewed against raw DICOM data by qualified personnel.
         </p>
     `;
 }
