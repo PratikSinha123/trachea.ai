@@ -1,29 +1,19 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": "",
   "functions": {
     "api/index.py": {
-      "includeFiles": "data/**"
+      "includeFiles": "public/data/**"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py?route=$1" },
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/(css|js|data)/(.*)", "destination": "/$1/$2" }
+    { "source": "/api/(.*)", "destination": "/api/index.py?route=$1" }
   ],
   "headers": [
     {
-      "source": "/data/:path*",
+      "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "no-store, max-age=0" }
-      ]
-    },
-    {
-      "source": "/api/:path*",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
+        { "key": "Cache-Control", "value": "no-store, max-age=0, must-revalidate" }
       ]
     }
   ]
