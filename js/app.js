@@ -115,30 +115,56 @@ async function loadScan(scanId) {
     statusText.textContent = `ANALYZING: ${scanId.split('__')[0]}`;
 
     try {
-        // Fetch full metadata
-        const metaRes = await fetch(`${API_BASE}/api/scan/${scanId}`);
-        const meta = await metaRes.json();
+        // Try to find the scan in our local allScans list first (data manifest)
+        const localMeta = allScans.find(s => s.scan_id === scanId);
+        let meta = localMeta;
+
+        if (!meta) {
+            // Fallback: Fetch metadata via API or static path
+            const paths = [
+                `${API_BASE}/api/scan/${scanId}`,
+                `${API_BASE}/data/${scanId}/metadata.json`,
+                `data/${scanId}/metadata.json`
+            ];
+            
+            for (const path of paths) {
+                try {
+                    const res = await fetch(path);
+                    if (res.ok) {
+                        meta = await res.json();
+                        break;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        if (!meta) throw new Error("Metadata not found");
 
         // Load 3D Meshes
         viewer3d.clearAll();
-        await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/diseased`, "diseased");
-        await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/healthy`, "healthy");
         
-        // Load context meshes if available
-        const contextLayers = ['body', 'heart', 'aorta', 'pulmonary_artery'];
-        for (const layer of contextLayers) {
-            try {
-                // Check if mesh exists before loading
-                await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/${layer}`, layer);
-            } catch(e) {}
+        // Define mesh paths
+        const meshBase = meta.meshes?.diseased ? 
+            (meta.meshes.diseased.startsWith('http') ? '' : `${API_BASE}/data/${scanId}/`) : 
+            `${API_BASE}/api/scan/${scanId}/mesh/`;
+
+        await viewer3d.loadMesh(meta.meshes?.diseased ? `${meshBase}${meta.meshes.diseased}` : `${meshBase}diseased`, "diseased");
+        await viewer3d.loadMesh(meta.meshes?.healthy ? `${meshBase}${meta.meshes.healthy}` : `${meshBase}healthy`, "healthy");
+        
+        // Load context meshes
+        if (meta.meshes?.context) {
+            for (const [layer, path] of Object.entries(meta.meshes.context)) {
+                try { await viewer3d.loadMesh(`${meshBase}${path}`, layer); } catch(e) {}
+            }
         }
 
         updateMetrics(meta.stats || {});
         
         // Update 2D Slice Viewer
-        const dimRes = await fetch(`${API_BASE}/api/scan/${scanId}/dimensions`);
-        const dims = await dimRes.json();
-        await sliceViewer.loadScan(scanId, dims, meta.cross_sections);
+        if (sliceViewer) {
+            const dims = meta.dimensions || { axial: 200, coronal: 200, sagittal: 200 };
+            await sliceViewer.loadScan(scanId, dims, meta.cross_sections);
+        }
 
     } catch (err) {
         console.error("Failed to load patient record:", err);
