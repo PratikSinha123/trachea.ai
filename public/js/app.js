@@ -16,7 +16,7 @@ let allScans = [];
 
 // ─── Initialization ────────────────────────────────────────
 async function init() {
-    console.log("🚀 TracheaAI: Initializing Professional Clinical Suite...");
+    console.log("%c 🫁 TRACHEA.AI ELITE CORE v13 // READY FOR SAFARI ", "background: #0f172a; color: #38bdf8; font-size: 20px; font-weight: bold; padding: 10px; border: 2px solid #38bdf8;");
     
     try {
         // 1. Initialize Viewers

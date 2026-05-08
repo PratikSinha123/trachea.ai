@@ -8,18 +8,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=999">
 </head>
-<body data-build="2026-05-08T0536">
+<body data-build="2026-05-08T0545">
+    <div id="emergency-deploy-marker" style="background:var(--clinical-red); color:#000; font-weight:900; text-align:center; padding:10px; font-size:14px; position:fixed; top:0; left:0; right:0; z-index:9999;">
+        🚀 ELITE CORE V14 DEPLOYED // IF YOU SEE THIS RED BAR, YOU ARE ON THE NEW PRO VERSION
+    </div>
     <!-- Top Navigation -->
-    <header class="top-bar">
+    <header class="top-bar" style="margin-top:40px;">
         <div class="logo">
             <span class="logo-icon">🫁</span>
-            <span class="logo-name">TRACHEA.AI</span>
+            <div style="display:flex; flex-direction:column;">
+                <span class="logo-name">TRACHEA.AI</span>
+                <span style="font-size:8px; color:var(--clinical-blue); font-weight:800; letter-spacing:1px; margin-top:-4px;">ELITE CORE V13 // SAFARI OK</span>
+            </div>
         </div>
         <div class="top-bar-center">
             <div class="search-container">
                 <input type="text" id="patient-search" class="search-input" placeholder="Search Hospital Record ID / Scan UID...">
             </div>
             <button id="btn-dashboard" class="btn-primary" style="background:transparent; border:1px solid var(--clinical-blue); color:var(--clinical-blue);">PORTFOLIO</button>
+            <button onclick="window.location.reload(true)" class="btn-primary" style="background:rgba(248,113,113,0.1); border:1px solid var(--clinical-red); color:var(--clinical-red); font-size:10px;">FORCE REFRESH</button>
             <button id="btn-process" class="btn-primary">NEW SCAN</button>
         </div>
         <div class="top-bar-right">
