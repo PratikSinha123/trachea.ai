@@ -327,6 +327,15 @@ function setupEvents() {
         };
     });
 
+    // Breathing Mode
+    document.querySelectorAll("#breath-mode .btn-toggle").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll("#breath-mode .btn-toggle").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            viewer3d?.setBreathingEnabled(btn.dataset.breath === "true");
+        };
+    });
+
     // Opacity
     const opacity = document.getElementById("opacity-slider");
     if (opacity) {

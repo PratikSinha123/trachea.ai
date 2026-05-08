@@ -280,30 +280,30 @@ export class Viewer3D {
                 clearcoatRoughness: 0.3,
                 opacityMult: 0.72,      // semi-transparent → hollow lumen visible inside
             },
-            // Healthy trachea: warm pink tissue, opaque
+            // Healthy trachea: blue tissue, opaque
             healthy: {
-                color: 0xe87070,
-                emissive: 0x1a0808,
-                emissiveIntensity: 0.05,
+                color: 0x3b82f6,
+                emissive: 0x0a1a3a,
+                emissiveIntensity: 0.1,
                 roughness: 0.55,
                 metalness: 0.0,
                 clearcoat: 0.7,
                 clearcoatRoughness: 0.2,
                 sheen: 0.5,
-                sheenColor: 0xf0a0a0,
+                sheenColor: 0x8ab4f8,
                 sheenRoughness: 0.4,
                 opacityMult: 0.78,
             },
             // Ghost overlay when showing both
             healthy_ghost: {
-                color: 0x34d399,
-                emissive: 0x0a2a1a,
+                color: 0x3b82f6,
+                emissive: 0x0a1a3a,
                 emissiveIntensity: 0.2,
                 roughness: 0.3,
                 metalness: 0.0,
                 clearcoat: 0.2,
                 clearcoatRoughness: 0.5,
-                opacityMult: 0.22,
+                opacityMult: 0.35,
             },
             // Context layers
             body: { color: 0xf0e8e0, emissive: 0x000000, emissiveIntensity: 0, roughness: 0.1, metalness: 0.0, transmission: 0.92, ior: 1.3, clearcoat: 0.0, opacityMult: 0.12, depthWrite: false },
