@@ -54,34 +54,30 @@ async function init() {
 
 // ─── Data Management ────────────────────────────────────────
 async function loadScanList() {
-    console.log("📡 Fetching patient manifest...");
-    try {
-        // Primary: Serverless API
-        let res = await fetch(`${API_BASE}/api/scans`);
-        allScans = await res.json();
-
-        // Fail-safe: If API returns empty but we're on Vercel, fetch static JSON directly
-        if ((!allScans || allScans.length === 0) && window.location.hostname.includes('vercel')) {
-            console.log("🔄 API returned empty. Retrying with direct static fetch...");
-            res = await fetch(`${window.location.origin}/data/scans.json`);
-            if (res.ok) allScans = await res.json();
+    console.log("📡 Initializing Patient Data...");
+    
+    // Primary: Hardcoded Manifest (Elite Stability)
+    if (window.TRACHEA_SCAN_DATA && window.TRACHEA_SCAN_DATA.length > 0) {
+        console.log("✅ Using Hardcoded Manifest");
+        allScans = window.TRACHEA_SCAN_DATA;
+    } else {
+        // Fallback: API
+        try {
+            console.log("🔄 Manifest missing, fetching from API...");
+            const res = await fetch(`${API_BASE}/api/scans`);
+            allScans = await res.json();
+        } catch (err) {
+            console.error("❌ Fatal: No patient data source found.");
         }
-
-        if (!allScans || allScans.length === 0) {
-            console.warn("⚠️ No patient records found in either API or Static storage.");
-        }
-
-        renderPatientGrid(allScans);
-        
-        const totalEl = document.getElementById("dash-total-count");
-        const stenEl = document.getElementById("dash-stenosis-count");
-        
-        if (totalEl) totalEl.textContent = allScans.length;
-        if (stenEl) stenEl.textContent = allScans.filter(s => (s.stats?.max_stenosis_pct || 0) > 20).length;
-
-    } catch (err) {
-        console.error("❌ Critical Data Error:", err);
     }
+
+    renderPatientGrid(allScans);
+    
+    const totalEl = document.getElementById("dash-total-count");
+    const stenEl = document.getElementById("dash-stenosis-count");
+    
+    if (totalEl) totalEl.textContent = allScans.length;
+    if (stenEl) stenEl.textContent = allScans.filter(s => (s.stats?.max_stenosis_pct || 0) > 20).length;
 }
 
 function renderPatientGrid(scans) {
