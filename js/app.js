@@ -112,7 +112,7 @@ async function loadScan(scanId) {
     
     welcomeView?.classList.add("hidden");
     analysisPanel?.classList.remove("hidden");
-    statusText.textContent = `ANALYZING: ${scanId.split('__')[0]}`;
+    statusText.textContent = `LOADING: ${scanId.split('__')[0]}...`;
 
     try {
         // Try to find the scan in our local allScans list first (data manifest)
@@ -124,7 +124,10 @@ async function loadScan(scanId) {
             const paths = [
                 `${API_BASE}/api/scan/${scanId}`,
                 `${API_BASE}/data/${scanId}/metadata.json`,
-                `data/${scanId}/metadata.json`
+                `${API_BASE}/public/data/${scanId}/metadata.json`,
+                `data/${scanId}/metadata.json`,
+                `public/data/${scanId}/metadata.json`,
+                `/data/${scanId}/metadata.json`
             ];
             
             for (const path of paths) {
@@ -132,33 +135,56 @@ async function loadScan(scanId) {
                     const res = await fetch(path);
                     if (res.ok) {
                         meta = await res.json();
+                        console.log(`✅ Metadata loaded from: ${path}`);
                         break;
                     }
                 } catch(e) {}
             }
         }
 
-        if (!meta) throw new Error("Metadata not found");
+        if (!meta) throw new Error("Metadata record not found on server.");
 
         // Load 3D Meshes
         viewer3d.clearAll();
         
-        // Define mesh paths
-        const meshBase = meta.meshes?.diseased ? 
-            (meta.meshes.diseased.startsWith('http') ? '' : `${API_BASE}/data/${scanId}/`) : 
-            `${API_BASE}/api/scan/${scanId}/mesh/`;
+        // Try multiple bases for meshes
+        const meshBases = [
+            `${API_BASE}/data/${scanId}/`,
+            `${API_BASE}/data/${scanId}/meshes/`,
+            `${API_BASE}/public/data/${scanId}/`,
+            `${API_BASE}/public/data/${scanId}/meshes/`,
+            `${API_BASE}/api/scan/${scanId}/mesh/`
+        ];
 
-        await viewer3d.loadMesh(meta.meshes?.diseased ? `${meshBase}${meta.meshes.diseased}` : `${meshBase}diseased`, "diseased");
-        await viewer3d.loadMesh(meta.meshes?.healthy ? `${meshBase}${meta.meshes.healthy}` : `${meshBase}healthy`, "healthy");
+        const loadMeshWithRetry = async (type, fallbackName) => {
+            const fileName = (meta.meshes?.[type] || fallbackName).split('/').pop();
+            let loaded = false;
+            for (const base of meshBases) {
+                try {
+                    const url = `${base}${fileName}`;
+                    console.log(`📡 Trying mesh: ${url}`);
+                    await viewer3d.loadMesh(url, type);
+                    loaded = true;
+                    console.log(`✅ Loaded ${type} from ${base}`);
+                    break;
+                } catch(e) {}
+            }
+            if (!loaded) console.warn(`Could not load ${type} mesh from any path.`);
+        };
+
+        statusText.textContent = `RENDERING: ${scanId.split('__')[0]}...`;
+        await loadMeshWithRetry("diseased", "diseased.glb");
+        await loadMeshWithRetry("healthy", "healthy.glb");
         
         // Load context meshes
         if (meta.meshes?.context) {
             for (const [layer, path] of Object.entries(meta.meshes.context)) {
-                try { await viewer3d.loadMesh(`${meshBase}${path}`, layer); } catch(e) {}
+                try { await loadMeshWithRetry(layer, path); } catch(e) {}
             }
         }
 
         updateMetrics(meta.stats || {});
+        statusText.textContent = `ANALYSIS COMPLETE: ${scanId.split('__')[0]}`;
         
         // Update 2D Slice Viewer
         if (sliceViewer) {
@@ -167,8 +193,9 @@ async function loadScan(scanId) {
         }
 
     } catch (err) {
-        console.error("Failed to load patient record:", err);
-        statusText.textContent = "ERROR LOADING RECORD";
+        console.error("❌ Failed to load patient record:", err);
+        statusText.textContent = `ERROR: COULD NOT LOAD RECORD [${scanId.split('__')[0]}]`;
+        alert(`Error loading data. Path tried might be incorrect on Vercel.`);
     }
 }
 
