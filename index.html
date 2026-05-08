@@ -6,7 +6,7 @@
     <title>TracheaAI | AI-Powered Tracheal Analysis</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1000">
+    <link rel="stylesheet" href="css/styles.css?v=1002">
 </head>
 <body data-build="2026-05-08">
     <div class="app-container">
@@ -151,11 +151,17 @@
         </div>
     </div>
 
-    <script src="js/data_manifest.js?v=1000"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.min.js"></script>
-    <script type="module" src="js/viewer3d.js?v=1000"></script>
-    <script type="module" src="js/sliceViewer.js?v=1000"></script>
-    <script type="module" src="js/app.js?v=1000"></script>
+    <script src="js/data_manifest.js?v=1002"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/viewer3d.js?v=1002"></script>
+    <script type="module" src="js/sliceViewer.js?v=1002"></script>
+    <script type="module" src="js/app.js?v=1002"></script>
 </body>
 </html>
-
