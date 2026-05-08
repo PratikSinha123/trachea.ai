@@ -3,48 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TracheaAI | Enterprise Medical Intelligence</title>
+    <title>TracheaAI | AI-Powered Tracheal Analysis</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=999">
+    <link rel="stylesheet" href="css/styles.css?v=1000">
 </head>
-<body data-build="2026-05-08T0545">
-    <div id="emergency-deploy-marker" style="background:var(--clinical-red); color:#000; font-weight:900; text-align:center; padding:10px; font-size:14px; position:fixed; top:0; left:0; right:0; z-index:9999;">
-        🚀 ELITE CORE V14 DEPLOYED // IF YOU SEE THIS RED BAR, YOU ARE ON THE NEW PRO VERSION
-    </div>
-    <!-- Top Navigation -->
-    <header class="top-bar" style="margin-top:40px;">
-        <div class="logo">
-            <span class="logo-icon">🫁</span>
-            <div style="display:flex; flex-direction:column;">
+<body data-build="2026-05-08">
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="top-bar">
+            <div class="logo">
+                <span class="logo-icon">🫁</span>
                 <span class="logo-name">TRACHEA.AI</span>
-                <span style="font-size:8px; color:var(--clinical-blue); font-weight:800; letter-spacing:1px; margin-top:-4px;">ELITE CORE V13 // SAFARI OK</span>
             </div>
-        </div>
-        <div class="top-bar-center">
-            <div class="search-container">
-                <input type="text" id="patient-search" class="search-input" placeholder="Search Hospital Record ID / Scan UID...">
+            <div class="top-bar-center">
+                <div id="viewer-info" class="status-text">SYSTEM READY // SELECT A CASE TO BEGIN</div>
             </div>
-            <button id="btn-dashboard" class="btn-primary" style="background:transparent; border:1px solid var(--clinical-blue); color:var(--clinical-blue);">PORTFOLIO</button>
-            <button onclick="window.location.reload(true)" class="btn-primary" style="background:rgba(248,113,113,0.1); border:1px solid var(--clinical-red); color:var(--clinical-red); font-size:10px;">FORCE REFRESH</button>
-            <button id="btn-process" class="btn-primary">NEW SCAN</button>
-        </div>
-        <div class="top-bar-right">
-            <div id="device-badge" style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; display:flex; align-items:center; gap:8px;">
-                <span class="status-indicator status-normal"></span>
-                <span class="badge-text">System Online</span>
-            </div>
-        </div>
-    </header>
-
-    <main class="content">
-        <!-- Sidebar Navigation -->
-        <aside class="panel">
-            <div class="panel-section">
-                <div class="section-header">
-                    <span class="section-title">Anatomical Controls</span>
+            <div class="top-bar-right">
+                <button id="btn-process" class="btn-primary">NEW ANALYSIS</button>
+                <div id="device-badge" class="badge">
+                    <span class="status-indicator status-normal"></span>
+                    <span class="badge-text">AI ENGINE ONLINE</span>
                 </div>
-                <div class="control-box">
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Sidebar: Patient List -->
+            <aside class="sidebar-left">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">Clinical Records</span>
+                    <div class="search-container">
+                        <input type="text" id="patient-search" class="search-input" placeholder="Search Patient ID...">
+                    </div>
+                </div>
+                <div id="patient-list" class="patient-list">
+                    <!-- Cards injected via JS -->
+                    <div class="loading-state">Initializing Database...</div>
+                </div>
+            </aside>
+
+            <!-- Center: 3D Viewport -->
+            <section class="viewer-container" id="viewer-container">
+                <div id="welcome-view" class="welcome-view">
+                    <div class="welcome-content">
+                        <h2>Welcome to TracheaAI</h2>
+                        <p>Select a patient from the left panel to begin automated anatomical analysis and 3D reconstruction.</p>
+                        <div class="help-grid">
+                            <div class="help-item"><span>🖱️ Left Click</span> Rotate Model</div>
+                            <div class="help-item"><span>🖱️ Right Click</span> Pan View</div>
+                            <div class="help-item"><span>🖱️ Scroll</span> Zoom In/Out</div>
+                        </div>
+                    </div>
+                </div>
+                <canvas id="viewer-canvas"></canvas>
+                
+                <!-- HUD Controls -->
+                <div class="viewer-hud top-right">
                     <div class="btn-toggle-group" id="display-mode">
                         <button class="btn-toggle active" data-mode="diseased">PATHOLOGY</button>
                         <button class="btn-toggle" data-mode="healthy">HEALTHY</button>
@@ -52,130 +67,95 @@
                         <button class="btn-toggle" data-mode="morph">MORPH</button>
                     </div>
                 </div>
-                <div class="control-box">
-                    <span class="metric-label">Tissue Opacity</span>
-                    <input type="range" id="opacity-slider" class="slider" style="width:100%;" min="0" max="100" value="85">
-                </div>
-            </div>
+            </section>
 
-            <div class="panel-section">
-                <div class="section-header">
-                    <span class="section-title">Clinical Triage</span>
-                </div>
-                <div id="severity-badge" style="padding:16px; border-radius:8px; border:1px solid var(--border-subtle); background:rgba(15,23,42,0.5);">
-                    <span class="metric-label">Status</span>
-                    <div id="severity-label" style="font-size:18px; font-weight:800; color:var(--clinical-green);">NORMAL</div>
-                </div>
-            </div>
-
-            <div class="panel-section">
-                <div class="section-header">
-                    <span class="section-title">Anatomy Layers</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:12px;">
-                    <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                        <span style="font-size:12px; color:var(--text-secondary);">External Body</span>
-                        <input type="checkbox" class="context-toggle" data-layer="body">
-                    </label>
-                    <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                        <span style="font-size:12px; color:var(--text-secondary);">Cardiac Volume</span>
-                        <input type="checkbox" class="context-toggle" data-layer="heart">
-                    </label>
-                    <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                        <span style="font-size:12px; color:var(--text-secondary);">Major Vessels</span>
-                        <input type="checkbox" class="context-toggle" data-layer="vessels">
-                    </label>
-                </div>
-            </div>
-
-            <div class="panel-section">
-                <div class="section-header">
-                    <span class="section-title">Metric Analytics</span>
-                </div>
-                <div class="card-metrics" id="stats-container">
-                    <div class="card-stat">
-                        <span class="metric-label">Lumen Vol</span>
-                        <span id="stat-vol-diseased" class="metric-value">—</span>
+            <!-- Right Sidebar: Controls & Analytics -->
+            <aside class="sidebar-right hidden" id="analysis-panel">
+                <div class="panel-section">
+                    <div class="section-header">
+                        <span class="section-title">Anatomy Control</span>
                     </div>
-                    <div class="card-stat">
-                        <span class="metric-label">Max Stenosis</span>
-                        <span id="stat-stenosis" class="metric-value" style="color:var(--clinical-red);">—</span>
+                    <div class="control-box">
+                        <span class="label">Tissue Opacity</span>
+                        <input type="range" id="opacity-slider" class="slider" min="0" max="100" value="85">
                     </div>
-                    <div class="card-stat">
-                        <span class="metric-label">Min Diam</span>
-                        <span id="stat-min-diam" class="metric-value">—</span>
-                    </div>
-                    <div class="card-stat">
-                        <span class="metric-label">Anomalies</span>
-                        <span id="stat-anomalies" class="metric-value">—</span>
+                    <div class="layer-toggles">
+                        <label class="toggle-item">
+                            <input type="checkbox" class="context-toggle" data-layer="body">
+                            <span>External Body</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" class="context-toggle" data-layer="heart">
+                            <span>Cardiac Volume</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" class="context-toggle" data-layer="vessels">
+                            <span>Major Vessels</span>
+                        </label>
                     </div>
                 </div>
-            </div>
-        </aside>
 
-        <!-- Main Viewport -->
-        <section class="viewer-container" id="viewer-container">
-            <canvas id="viewer-canvas"></canvas>
-            
-            <div id="dashboard-overlay" class="dashboard-overlay">
-                <div class="dashboard-header">
-                    <h1 class="dashboard-title">Clinical Intelligence Dashboard</h1>
-                    <div class="dashboard-stats-row">
-                        <div class="dash-stat-item">Total Scans: <b id="dash-total-count">0</b></div>
-                        <div class="dash-stat-item">Critical Findings: <b id="dash-stenosis-count" style="color:var(--clinical-red);">0</b></div>
+                <div class="panel-section">
+                    <div class="section-header">
+                        <span class="section-title">Metrics & Triage</span>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <span class="metric-label">Max Stenosis</span>
+                            <span id="stat-stenosis" class="metric-value">—</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Min Diameter</span>
+                            <span id="stat-min-diam" class="metric-value">—</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Lumen Volume</span>
+                            <span id="stat-vol-diseased" class="metric-value">—</span>
+                        </div>
+                        <div id="severity-badge" class="severity-badge">
+                            <span id="severity-label">NORMAL</span>
+                        </div>
                     </div>
                 </div>
-                <div id="patient-grid" class="patient-grid">
-                    <!-- Cards injected via JS -->
-                </div>
-            </div>
 
-            <div class="hud-overlay hud-top-left">
-                <div id="viewer-info">SYSTEM READY // WAITING FOR SELECTION</div>
-            </div>
-            <div class="hud-overlay hud-bottom-right">
-                <div>AXIS: X-SAGITTAL | Y-AXIAL | Z-CORONAL</div>
-            </div>
-        </section>
-
-        <!-- Right Analysis Panel -->
-        <aside class="panel panel-right">
-            <div class="panel-section">
-                <div class="section-header">
-                    <span class="section-title">Visual Diagnosis</span>
-                </div>
-                <div class="btn-toggle-group" style="margin-bottom:12px;">
-                    <button class="btn-toggle active" data-view="ct">CT SLICES</button>
-                    <button class="btn-toggle" data-view="report">REPORT</button>
-                </div>
-                <div id="ct-view-container" style="background:#000; aspect-ratio:1; border-radius:8px; overflow:hidden; border:1px solid var(--border-subtle);">
-                    <canvas id="slice-canvas" style="width:100%; height:100%;"></canvas>
-                </div>
-                <div id="report-view-container" class="hidden" style="padding:16px; background:var(--obsidian); border-radius:8px; border:1px solid var(--border-subtle);">
-                    <div id="report-content" style="font-size:12px; line-height:1.6; color:var(--text-secondary);">
-                        No clinical report generated.
+                <div class="panel-section tabs-section">
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-view="ct">CT SLICES</button>
+                        <button class="tab-btn" data-view="report">REPORT</button>
+                    </div>
+                    <div id="ct-view-container" class="tab-content">
+                        <canvas id="slice-canvas"></canvas>
+                    </div>
+                    <div id="report-view-container" class="tab-content hidden">
+                        <div class="chart-container" style="margin-bottom: 20px;">
+                            <span class="label">Luminal Diameter Profile (mm)</span>
+                            <canvas id="profile-chart" style="width:100%; height:120px; background: #111; border-radius: 4px; border: 1px solid var(--border);"></canvas>
+                        </div>
+                        <div id="report-content" class="clinical-report"></div>
                     </div>
                 </div>
-            </div>
-        </aside>
-    </main>
+            </aside>
+        </div>
+    </div>
 
-    <!-- Modal Base -->
-    <div id="process-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:2000; display:flex; align-items:center; justify-content:center;">
-        <div style="background:var(--deep-azure); padding:40px; border-radius:24px; border:1px solid var(--border-subtle); width:500px;">
-            <h2 style="margin-bottom:20px;">Initialize New Pipeline</h2>
-            <input type="text" id="input-path" placeholder="DICOM Source Path" style="width:100%; background:var(--obsidian); border:1px solid var(--border-subtle); padding:12px; border-radius:8px; color:#fff; margin-bottom:16px;">
-            <div style="display:flex; gap:12px; justify-content:flex-end;">
-                <button id="btn-cancel-process" class="btn-primary" style="background:transparent; color:var(--text-dim);">CANCEL</button>
+    <!-- Modal: New Analysis -->
+    <div id="process-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Initialize New Pipeline</h2>
+            <p>Enter the server-side path to the DICOM directory for AI processing.</p>
+            <input type="text" id="input-path" placeholder="/home/user/dataset/patient_001">
+            <div class="modal-actions">
+                <button id="btn-cancel-process" class="btn-secondary">CANCEL</button>
                 <button id="btn-start-process" class="btn-primary">START ANALYSIS</button>
             </div>
         </div>
     </div>
 
-    <script src="js/data_manifest.js?v=999"></script>
+    <script src="js/data_manifest.js?v=1000"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.min.js"></script>
-    <script type="module" src="js/viewer3d.js?v=999"></script>
-    <script type="module" src="js/sliceViewer.js?v=999"></script>
-    <script type="module" src="js/app.js?v=999"></script>
+    <script type="module" src="js/viewer3d.js?v=1000"></script>
+    <script type="module" src="js/sliceViewer.js?v=1000"></script>
+    <script type="module" src="js/app.js?v=1000"></script>
 </body>
 </html>
+

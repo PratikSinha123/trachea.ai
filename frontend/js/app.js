@@ -1,6 +1,5 @@
 /**
- * TracheaAI — Elite Main Controller
- * Professional Clinical Version (v12)
+ * TracheaAI — Clinical Application Controller
  */
 
 import { Viewer3D } from "./viewer3d.js";
@@ -11,40 +10,27 @@ const API_BASE = (window.TRACHEA_API_BASE_URL || window.location.origin).replace
 // ─── Global State ──────────────────────────────────────────
 let viewer3d = null;
 let sliceViewer = null;
-let currentScan = null;
+let currentScanId = null;
 let allScans = [];
 
 // ─── Initialization ────────────────────────────────────────
 async function init() {
-    console.log("🚀 TracheaAI: Initializing Professional Clinical Suite...");
+    console.log("🫁 TracheaAI System Booting...");
     
     try {
         // 1. Initialize Viewers
-        const canvas3d = document.getElementById("viewer-canvas");
-        if (canvas3d) {
-            viewer3d = new Viewer3D("viewer-canvas");
-            console.log("✅ 3D Viewport Engine Ready");
-        }
-
-        const canvasSlice = document.getElementById("slice-canvas");
-        if (canvasSlice) {
-            sliceViewer = new SliceViewer("slice-canvas", "profile-chart", API_BASE);
-            console.log("✅ Diagnostic Slice Engine Ready");
-        }
+        viewer3d = new Viewer3D("viewer-canvas");
+        sliceViewer = new SliceViewer("slice-canvas", "profile-chart", API_BASE);
         
         // 2. Load Patient Data
         await loadScanList();
         
-        // 3. Bind UI Interactivity
+        // 3. Bind UI Events
         setupEvents();
 
-        // 4. Final Layout Adjustment
-        if (viewer3d) viewer3d._onResize();
+        // 4. Initial Resize
+        viewer3d._onResize();
         
-        // 5. Default View: Dashboard
-        const dashboard = document.getElementById("dashboard-overlay");
-        if (dashboard) dashboard.classList.remove("hidden");
-
         console.log("✅ System Startup Complete");
 
     } catch (err) {
@@ -54,187 +40,239 @@ async function init() {
 
 // ─── Data Management ────────────────────────────────────────
 async function loadScanList() {
-    console.log("📡 Fetching patient manifest...");
-    try {
-        // Primary: Serverless API
-        let res = await fetch(`${API_BASE}/api/scans`);
-        allScans = await res.json();
-
-        // Fail-safe: If API returns empty but we're on Vercel, fetch static JSON directly
-        if ((!allScans || allScans.length === 0) && window.location.hostname.includes('vercel')) {
-            console.log("🔄 API returned empty. Retrying with direct static fetch...");
-            res = await fetch(`${window.location.origin}/data/scans.json`);
+    // Priority: Manifest (Static) -> API (Live)
+    if (window.TRACHEA_SCAN_DATA && window.TRACHEA_SCAN_DATA.length > 0) {
+        allScans = window.TRACHEA_SCAN_DATA;
+    } else {
+        try {
+            const res = await fetch(`${API_BASE}/api/scans`);
             if (res.ok) allScans = await res.json();
+        } catch (err) {
+            console.warn("Could not fetch scans from API, using empty list.");
         }
-
-        if (!allScans || allScans.length === 0) {
-            console.warn("⚠️ No patient records found in either API or Static storage.");
-        }
-
-        renderPatientGrid(allScans);
-        
-        const totalEl = document.getElementById("dash-total-count");
-        const stenEl = document.getElementById("dash-stenosis-count");
-        
-        if (totalEl) totalEl.textContent = allScans.length;
-        if (stenEl) stenEl.textContent = allScans.filter(s => (s.stats?.max_stenosis_pct || 0) > 20).length;
-
-    } catch (err) {
-        console.error("❌ Critical Data Error:", err);
     }
+
+    renderPatientList(allScans);
 }
 
-function renderPatientGrid(scans) {
-    const grid = document.getElementById("patient-grid");
-    if (!grid) return;
-    grid.innerHTML = "";
+function renderPatientList(scans) {
+    const list = document.getElementById("patient-list");
+    if (!list) return;
+    list.innerHTML = "";
     
     if (scans.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1; padding:100px; text-align:center; color:var(--text-dim);">NO CLINICAL RECORDS FOUND</div>';
+        list.innerHTML = '<div class="loading-state">No clinical records found.</div>';
         return;
     }
 
     scans.forEach(scan => {
         const stenosis = scan.stats?.max_stenosis_pct || 0;
         const severity = stenosis > 40 ? "critical" : stenosis > 15 ? "warning" : "normal";
-        const statusColor = severity === "critical" ? "var(--clinical-red)" : severity === "warning" ? "var(--clinical-yellow)" : "var(--clinical-green)";
+        const dotColor = severity === "critical" ? "var(--accent-red)" : severity === "warning" ? "var(--accent-yellow)" : "var(--accent-green)";
 
-        const card = document.createElement("div");
-        card.className = "patient-card";
-        card.onclick = () => loadScan(scan.scan_id);
-        card.innerHTML = `
-            <div class="card-header">
-                <span class="patient-id">${scan.scan_id.split('__')[0]}</span>
-                <span class="status-indicator status-${severity}"></span>
+        const item = document.createElement("div");
+        item.className = `patient-item ${currentScanId === scan.scan_id ? 'active' : ''}`;
+        item.onclick = () => loadScan(scan.scan_id);
+        
+        // Shorten ID for display
+        const displayId = scan.scan_id.split('__')[0].replace('LIDC-IDRI-', 'LIDC-');
+
+        item.innerHTML = `
+            <div class="patient-item-header">
+                <span class="patient-item-id">${displayId}</span>
+                <span class="severity-dot" style="background:${dotColor}"></span>
             </div>
-            <div class="card-metrics">
-                <div class="card-metric">
-                    <span class="metric-label">Stenosis</span>
-                    <span class="metric-value" style="color:${statusColor}">${stenosis.toFixed(1)}%</span>
-                </div>
-                <div class="card-metric">
-                    <span class="metric-label">Min Area</span>
-                    <span class="metric-value">${(scan.stats?.min_diameter_mm || 0).toFixed(1)}mm</span>
-                </div>
-            </div>
-            <div style="margin-top:20px;">
-                <button class="btn-primary" style="width:100%; font-size:10px; padding:6px;">OPEN CASE</button>
+            <div class="patient-item-meta">
+                <span>Stenosis: ${stenosis.toFixed(1)}%</span>
             </div>
         `;
-        grid.appendChild(card);
+        list.appendChild(item);
     });
 }
 
 async function loadScan(scanId) {
-    const dashboard = document.getElementById("dashboard-overlay");
+    if (currentScanId === scanId) return;
+    
+    const welcomeView = document.getElementById("welcome-view");
+    const analysisPanel = document.getElementById("analysis-panel");
+    const statusText = document.getElementById("viewer-info");
+
     if (!scanId) {
-        if (viewer3d) viewer3d.clearAll();
-        if (dashboard) dashboard.classList.remove("hidden");
+        currentScanId = null;
+        viewer3d.clearAll();
+        welcomeView?.classList.remove("hidden");
+        analysisPanel?.classList.add("hidden");
+        statusText.textContent = "SYSTEM READY // SELECT A CASE";
+        renderPatientList(allScans);
         return;
     }
 
-    if (dashboard) dashboard.classList.add("hidden");
-    currentScan = scanId;
+    currentScanId = scanId;
+    renderPatientList(allScans); // Update active state
+    
+    welcomeView?.classList.add("hidden");
+    analysisPanel?.classList.remove("hidden");
+    statusText.textContent = `ANALYZING: ${scanId.split('__')[0]}`;
 
     try {
+        // Fetch full metadata
         const metaRes = await fetch(`${API_BASE}/api/scan/${scanId}`);
         const meta = await metaRes.json();
 
-        if (viewer3d) {
-            await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/diseased`, "diseased");
-            await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/healthy`, "healthy");
+        // Load 3D Meshes
+        viewer3d.clearAll();
+        await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/diseased`, "diseased");
+        await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/healthy`, "healthy");
+        
+        // Load context meshes if available
+        const contextLayers = ['body', 'heart', 'aorta', 'pulmonary_artery'];
+        for (const layer of contextLayers) {
+            try {
+                // Check if mesh exists before loading
+                await viewer3d.loadMesh(`${API_BASE}/api/scan/${scanId}/mesh/${layer}`, layer);
+            } catch(e) {}
         }
 
-        updateStats(meta.stats || {});
-        window._lastCrossSections = meta.cross_sections || [];
-
-        if (sliceViewer) {
-            const dimRes = await fetch(`${API_BASE}/api/scan/${scanId}/dimensions`);
-            const dims = await dimRes.json();
-            await sliceViewer.loadScan(scanId, dims, meta.cross_sections);
-        }
+        updateMetrics(meta.stats || {});
+        
+        // Update 2D Slice Viewer
+        const dimRes = await fetch(`${API_BASE}/api/scan/${scanId}/dimensions`);
+        const dims = await dimRes.json();
+        await sliceViewer.loadScan(scanId, dims, meta.cross_sections);
 
     } catch (err) {
         console.error("Failed to load patient record:", err);
+        statusText.textContent = "ERROR LOADING RECORD";
     }
 }
 
 // ─── UI Orchestration ───────────────────────────────────────
-function updateStats(stats) {
+function updateMetrics(stats) {
     if (!stats) return;
     const maxS = stats.max_stenosis_pct || 0;
     
-    const safeSet = (id, val) => {
+    const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
     };
 
-    safeSet("stat-vol-diseased", `${(stats.volume_diseased_cm3 || 0).toFixed(1)} cm³`);
-    safeSet("stat-stenosis", `${maxS.toFixed(1)}%`);
-    safeSet("stat-min-diam", `${(stats.min_diameter_mm || 0).toFixed(1)} mm`);
-    safeSet("stat-anomalies", stats.anomalies_found || 0);
+    setVal("stat-vol-diseased", `${(stats.volume_diseased_cm3 || 0).toFixed(1)} cm³`);
+    setVal("stat-stenosis", `${maxS.toFixed(1)}%`);
+    setVal("stat-min-diam", `${(stats.min_diameter_mm || 0).toFixed(1)} mm`);
 
-    const sevLabel = document.getElementById("severity-label");
-    if (sevLabel) {
-        if (maxS > 40) { sevLabel.textContent = "CRITICAL"; sevLabel.style.color = "var(--clinical-red)"; }
-        else if (maxS > 15) { sevLabel.textContent = "WARNING"; sevLabel.style.color = "var(--clinical-yellow)"; }
-        else { sevLabel.textContent = "NORMAL"; sevLabel.style.color = "var(--clinical-green)"; }
+    const badge = document.getElementById("severity-badge");
+    const label = document.getElementById("severity-label");
+    if (badge && label) {
+        if (maxS > 40) {
+            label.textContent = "CRITICAL STENOSIS";
+            badge.style.background = "rgba(239, 68, 68, 0.1)";
+            badge.style.color = "var(--accent-red)";
+            badge.style.borderColor = "rgba(239, 68, 68, 0.2)";
+        } else if (maxS > 15) {
+            label.textContent = "MODERATE OBSTRUCTION";
+            badge.style.background = "rgba(245, 158, 11, 0.1)";
+            badge.style.color = "var(--accent-yellow)";
+            badge.style.borderColor = "rgba(245, 158, 11, 0.2)";
+        } else {
+            label.textContent = "NORMAL ANATOMY";
+            badge.style.background = "rgba(16, 185, 129, 0.1)";
+            badge.style.color = "var(--accent-green)";
+            badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+        }
     }
 
-    updateClinicalReport(stats);
+    renderClinicalReport(stats);
 }
 
-function updateClinicalReport(stats) {
-    const reportContent = document.getElementById("report-content");
-    if (!reportContent) return;
-    const maxS = stats.max_stenosis_pct || 0;
-    const diag = maxS > 40 ? "SEVERE STENOSIS" : maxS > 15 ? "MODERATE OBSTRUCTION" : "NORMAL LIMITS";
+function renderClinicalReport(stats) {
+    const container = document.getElementById("report-content");
+    if (!container) return;
     
-    reportContent.innerHTML = `
-        <div style="font-family:var(--font-data); font-size:11px;">
-            <p style="margin-bottom:8px;"><strong>DIAGNOSIS:</strong> ${diag}</p>
-            <p><strong>NARROWING:</strong> ${maxS.toFixed(1)}%</p>
-            <p style="margin-top:12px; color:var(--text-dim); line-height:1.4;">Automated AI analysis complete. Morphological deviations detected in ${stats.anomalies_found || 0} zones.</p>
+    const maxS = stats.max_stenosis_pct || 0;
+    const date = new Date().toLocaleDateString();
+
+    container.innerHTML = `
+        <div style="font-family:var(--font-mono); font-size:11px; margin-bottom:12px; color:var(--text-dim);">
+            REPORT DATE: ${date}
         </div>
+        <p style="margin-bottom:12px;"><strong>Automated Morphological Assessment:</strong></p>
+        <p style="margin-bottom:8px;">The AI pipeline detected a maximal luminal narrowing of <strong>${maxS.toFixed(1)}%</strong>.</p>
+        <p style="margin-bottom:8px;">Total airway volume is measured at <strong>${(stats.volume_diseased_cm3 || 0).toFixed(1)} cm³</strong> compared to a predicted healthy volume of <strong>${(stats.volume_healthy_cm3 || 0).toFixed(1)} cm³</strong>.</p>
+        <p style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px; color:var(--text-muted); font-style:italic;">
+            Note: This report is generated by an experimental AI system and should be verified by a board-certified radiologist.
+        </p>
     `;
 }
 
 function setupEvents() {
-    const dashBtn = document.getElementById("btn-dashboard");
-    if (dashBtn) dashBtn.onclick = () => loadScan("");
-
+    // Search
     const search = document.getElementById("patient-search");
     if (search) {
         search.oninput = (e) => {
             const query = e.target.value.toLowerCase();
-            renderPatientGrid(allScans.filter(s => s.scan_id.toLowerCase().includes(query)));
+            renderPatientList(allScans.filter(s => s.scan_id.toLowerCase().includes(query)));
         };
     }
 
+    // Display Modes
     document.querySelectorAll("#display-mode .btn-toggle").forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll("#display-mode .btn-toggle").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            if (viewer3d) viewer3d.setDisplayMode(btn.dataset.mode);
+            viewer3d?.setDisplayMode(btn.dataset.mode);
         };
     });
 
+    // Opacity
     const opacity = document.getElementById("opacity-slider");
     if (opacity) {
-        opacity.oninput = (e) => { if (viewer3d) viewer3d.setOpacity(e.target.value / 100); };
+        opacity.oninput = (e) => viewer3d?.setOpacity(e.target.value / 100);
     }
 
-    document.querySelectorAll(".panel-right .btn-toggle").forEach(tab => {
-        tab.onclick = () => {
-            document.querySelectorAll(".panel-right .btn-toggle").forEach(t => t.classList.remove("active"));
-            tab.classList.add("active");
-            const view = tab.dataset.view;
-            const ct = document.getElementById("ct-view-container");
-            const rep = document.getElementById("report-view-container");
-            if (view === "ct") { ct?.classList.remove("hidden"); rep?.classList.add("hidden"); }
-            else { ct?.classList.add("hidden"); rep?.classList.remove("hidden"); }
+    // Context Layers
+    document.querySelectorAll(".context-toggle").forEach(toggle => {
+        toggle.onchange = (e) => {
+            viewer3d?.setContextVisibility(e.target.dataset.layer, e.target.checked);
         };
     });
+
+    // Tabs
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            
+            const view = btn.dataset.view;
+            document.getElementById("ct-view-container")?.classList.toggle("hidden", view !== "ct");
+            document.getElementById("report-view-container")?.classList.toggle("hidden", view !== "report");
+        };
+    });
+
+    // Modal
+    const modal = document.getElementById("process-modal");
+    document.getElementById("btn-process").onclick = () => modal?.classList.remove("hidden");
+    document.getElementById("btn-cancel-process").onclick = () => modal?.classList.add("hidden");
+    
+    document.getElementById("btn-start-process").onclick = async () => {
+        const path = document.getElementById("input-path").value;
+        if (!path) return alert("Please enter a DICOM path.");
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/process`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input_path: path })
+            });
+            if (res.ok) {
+                alert("Processing started successfully.");
+                modal?.classList.add("hidden");
+            } else {
+                alert("Failed to start processing.");
+            }
+        } catch (err) {
+            alert("Network error.");
+        }
+    };
 }
 
 // ─── Boot ──────────────────────────────────────────────────
