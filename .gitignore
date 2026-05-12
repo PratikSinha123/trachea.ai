@@ -23,7 +23,5 @@ __pycache__/
 # Vercel
 .vercel/
 
-# NOTE: public/data/ is NOT ignored — it contains exported scan data
-# that Vercel serves as static files. GLB meshes in public/ are tracked.
-# To ignore large exports during dev, uncomment:
-# public/data/*/slices/
+# Ignore exported scan data
+public/data/
