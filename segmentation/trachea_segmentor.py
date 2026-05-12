@@ -19,11 +19,15 @@ class TracheaSegmentor:
         self.device = device
 
     def segment(self, image: sitk.Image):
-        """Run the full trachea segmentation using TotalSegmentator."""
-        print("[1/3] Preprocessing CT scan for TotalSegmentator...")
+        """Run the full trachea segmentation using TotalSegmentator and nnU-Net."""
+        import tempfile
+        import shutil
+        from pathlib import Path
+
+        print("[1/4] Preprocessing CT scan for TotalSegmentator...")
         resampled, lung_mask, normalized = preprocess_ct(image, self.target_spacing)
 
-        print("[2/3] Running TotalSegmentator AI (This isolates the exact anatomy)...")
+        print("[2/4] Running TotalSegmentator AI (Anatomical Localization)...")
         # TotalSegmentator works best via files. We'll write the resampled image.
         temp_in = "temp_ct_scan.nii.gz"
         temp_out_dir = "temp_masks"
@@ -66,10 +70,10 @@ class TracheaSegmentor:
                 empty.CopyInformation(resampled)
                 masks[organ] = empty
 
-        refined_mask = masks["trachea"]
+        ts_trachea_mask = masks["trachea"]
 
         # Extract body contour by thresholding HU > -500
-        print("[2.5/3] Extracting body/skin contour...")
+        print("[2.5/4] Extracting body/skin contour...")
         resampled_arr = sitk.GetArrayFromImage(resampled)
         body_arr = (resampled_arr > -500).astype(np.uint8)
         
@@ -81,14 +85,80 @@ class TracheaSegmentor:
         body_mask.CopyInformation(resampled)
         masks["body"] = body_mask
 
+        print("[3/4] Running 3D nnU-Net on localized ROI (Fine-grained Segmentation)...")
+        # 1. Compute bounding box of TS mask
+        ts_arr = sitk.GetArrayFromImage(ts_trachea_mask)
+        z, y, x = np.where(ts_arr > 0)
+        
+        if len(z) == 0:
+            print("  ⚠ TotalSegmentator found no trachea. Falling back to empty mask.")
+            refined_mask = ts_trachea_mask
+        else:
+            pad = 20
+            z_min, z_max = max(0, z.min() - pad), min(ts_arr.shape[0], z.max() + pad + 1)
+            y_min, y_max = max(0, y.min() - pad), min(ts_arr.shape[1], y.max() + pad + 1)
+            x_min, x_max = max(0, x.min() - pad), min(ts_arr.shape[2], x.max() + pad + 1)
+
+            cropped_arr = resampled_arr[z_min:z_max, y_min:y_max, x_min:x_max]
+            cropped_img = sitk.GetImageFromArray(cropped_arr)
+            cropped_img.SetSpacing(resampled.GetSpacing())
+            cropped_img.SetDirection(resampled.GetDirection())
+            cropped_img.SetOrigin(resampled.TransformIndexToPhysicalPoint((int(x_min), int(y_min), int(z_min))))
+
+            with tempfile.TemporaryDirectory(prefix="nnunet_") as tmp:
+                tmp_path = Path(tmp)
+                images_ts = tmp_path / "imagesTs"
+                images_ts.mkdir()
+                preds_dir = tmp_path / "predictions"
+                preds_dir.mkdir()
+
+                cropped_path = images_ts / "roi_0000.nii.gz"
+                sitk.WriteImage(cropped_img, str(cropped_path))
+
+                # Resolve nnUNet env
+                env_vars = os.environ.copy()
+                ws = Path(__file__).resolve().parent.parent / "nnunet_workspace"
+                if "nnUNet_results" not in env_vars:
+                    env_vars["nnUNet_raw"] = str(ws / "nnUNet_raw")
+                    env_vars["nnUNet_preprocessed"] = str(ws / "nnUNet_preprocessed")
+                    env_vars["nnUNet_results"] = str(ws / "nnUNet_results")
+
+                nn_cmd = [
+                    "nnUNetv2_predict",
+                    "-d", "1",
+                    "-c", "3d_fullres",
+                    "-i", str(images_ts),
+                    "-o", str(preds_dir),
+                    "-f", "0"
+                ]
+                # nnU-Net handles cuda/cpu well natively. If specific device is asked:
+                if self.device in ["cuda", "mps", "cpu"]:
+                    nn_cmd.extend(["--device", self.device])
+
+                print(f"  Executing nnU-Net: {' '.join(nn_cmd)}")
+                subprocess.run(nn_cmd, env=env_vars, check=True)
+
+                pred_path = preds_dir / "roi.nii.gz"
+                if pred_path.exists():
+                    pred_img = sitk.ReadImage(str(pred_path))
+                    pred_arr = sitk.GetArrayFromImage(pred_img)
+                    
+                    final_arr = np.zeros_like(ts_arr)
+                    final_arr[z_min:z_max, y_min:y_max, x_min:x_max] = pred_arr
+                    
+                    refined_mask = sitk.GetImageFromArray(final_arr)
+                    refined_mask.CopyInformation(resampled)
+                else:
+                    print("  ⚠ nnU-Net prediction failed. Falling back to TotalSegmentator mask.")
+                    refined_mask = ts_trachea_mask
+
         # Cleanup temp files
         if os.path.exists(temp_in):
             os.remove(temp_in)
-        import shutil
         if os.path.exists(temp_out_dir):
             shutil.rmtree(temp_out_dir)
 
-        print("[3/3] Extracting centerline and cross-sections...")
+        print("[4/4] Extracting centerline and cross-sections...")
         centerline, cross_sections = self._extract_centerline(refined_mask, resampled)
 
         original_mask = resample_mask_like(refined_mask, image)
