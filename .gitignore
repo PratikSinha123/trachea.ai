@@ -1,15 +1,51 @@
-# Ignore data and generated files
+# Ignore data, models, and generated files
 processed_data/
+nnUNet_raw/
 nnUNet_raw_data/
+nnUNet_preprocessed/
 nnUNet_results/
 nnUNet_predictions/
+nnunet_workspace/
+temp_*
+temp_masks/
+temp_ct_scan.nii.gz
 *.nii
 *.nii.gz
 *.glb
+*.dcm
+*.dicom
 
-# Ignore python cache
+# Private & confidential files
+private/
+private_reports/
+private_data/
+*.secret
+.env
+.env.*
+
+# Python cache & virtual environments
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
 
-# Ignore OS files
+# OS & Editor files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+.idea/

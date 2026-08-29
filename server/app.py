@@ -135,9 +135,8 @@ async def get_slice(scan_id: str, axis: str, index: int):
     sl = np.clip(sl, -1024, 600)
     sl = ((sl + 1024) / 1624 * 255).astype(np.uint8)
 
-    # Convert to RGB so we can overlay color
-    import cv2
-    rgb_sl = cv2.cvtColor(sl, cv2.COLOR_GRAY2RGB)
+    # Convert grayscale to RGB
+    rgb_sl = np.stack([sl, sl, sl], axis=-1)
 
     # Try to load and overlay the mask
     mask_path = os.path.join(OUTPUT_ROOT, scan_id, "trachea_mask.nii.gz")
@@ -152,13 +151,14 @@ async def get_slice(scan_id: str, axis: str, index: int):
                     m_sl = mask_arr[:, index, :]
                 elif axis == "sagittal":
                     m_sl = mask_arr[:, :, index]
-                
-                # Overlay cyan/red color where mask > 0
-                overlay = rgb_sl.copy()
-                overlay[m_sl > 0] = [52, 211, 153] # Emerald green/cyan for trachea
-                
-                # Blend with original
-                cv2.addWeighted(overlay, 0.35, rgb_sl, 0.65, 0, rgb_sl)
+
+                # Overlay emerald green/cyan where mask > 0
+                mask_pixels = m_sl > 0
+                if np.any(mask_pixels):
+                    # Alpha blend: 65% CT image + 35% overlay color [52, 211, 153]
+                    color = np.array([52, 211, 153], dtype=np.float32)
+                    blended = (0.65 * rgb_sl[mask_pixels].astype(np.float32) + 0.35 * color).clip(0, 255).astype(np.uint8)
+                    rgb_sl[mask_pixels] = blended
         except Exception as e:
             print(f"Warning: Failed to overlay mask: {e}")
 
